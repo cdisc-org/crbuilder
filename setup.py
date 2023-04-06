@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="rulebuilder",
-    version="0.3.0",
+    version="0.3.1",
     author="Hanming Tu",
     author_email="hanming.tu@gmail.com",
     description="A tool for building CDISC Core rules",
