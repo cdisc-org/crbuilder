@@ -386,7 +386,7 @@ if __name__ == "__main__":
 
     # proc_sdtm_rules(rule_ids=["CG0002","CG0027","CG0015", "CG0063"], wrt2log=True,
     #                pub2db=1, db_name=db, ct_name=ct)
-    proc_sdtm_rules(rule_ids=[], wrt2log=True, pub2db=1,
+    proc_rules(rule_ids=[], wrt2log=True, pub2db=1,
                     get_db_rule=1, db_name=db, ct_name=ct)
 
 

@@ -6,10 +6,10 @@ provides a `RuleBuilder` class that can be used to read rule definitions from
 an Excel file or a YAML file, and then process those rules by applying them to 
 datasets. Here is a list of steps that it performs:
 * Read rule definition. Here is a list of avaialbe rule definitions:
-** FDA_VR1_6: FDA Validator Rules v1.6 December 2022_0
-** SDTM_V2_0: SDTM and SDTMIG Conformance Rules_v2.0
-** SEND_V4_0: SEND Conformance Rules v4.0
-** ADAM_V4_0: ADaM Conformance Rules v4.0
+    - FDA_VR1_6: FDA Validator Rules v1.6 December 2022_0
+    - SDTM_V2_0: SDTM and SDTMIG Conformance Rules_v2.0
+    - SEND_V4_0: SEND Conformance Rules v4.0
+    - ADAM_V4_0: ADaM Conformance Rules v4.0
 * Get rule statistics if `get_db_rule` or `pub2db` is enabled.
 * Back up current rule 
 * Get existing rule if the rule exists in the database or in local rule folder
