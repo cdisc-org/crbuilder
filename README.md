@@ -11,7 +11,7 @@ datasets. Here is a list of steps that it performs:
     - SEND_V4_0: SEND Conformance Rules v4.0
     - ADAM_V4_0: ADaM Conformance Rules v4.0
 * Get rule statistics if `get_db_rule` or `pub2db` is enabled.
-* Back up current rule 
+* Back up current rule(s) 
 * Get existing rule if the rule exists in the database or in local rule folder
 * Check rule citation agaist rule definition 
 * Add missing citation to the rule
@@ -96,5 +96,39 @@ processing of the rules.
 ## License
 
 This project is licensed under the MIT License - see the LICENSE.md file for details.
+
+## History
+
+### Version 0.4.0 (planned)
+
+* Add capability of processing FDA conformance rules
+* Add log level for creating log details 
+
+### Version 0.3.1
+
+* Moved from my personal repo (core-rule-builder) to CDISC repo (crbuilder)
+* Added command-line options
+* Added README 
+* Added backup as a default behavior while getting rule definition from database
+
+### Version 0.3.0
+
+* Added logging capability to produce a log file per rule 
+* Added report capability for all the rules processed
+* Added reading from and publishing to the database 
+* Added backup capability
+* Added de-dulication capability 
+
+### Version 0.2.0
+
+* Added mutiple rule processing capability
+* Added error handling and message processing 
+* Added processing status report 
+* Fixed a rule bugs  
+
+### Version 0.1.0
+* Set up procession framework
+* Read rules from a local rule folder
+* Produced single rule and pass rule validation 
 
 
