@@ -4,22 +4,33 @@
 RuleBuilder is a Python package for processing CDISC conformance rules. It 
 provides a `RuleBuilder` class that can be used to read rule definitions from 
 an Excel file or a YAML file, and then process those rules by applying them to 
-datasets.
+datasets. Here is a list of steps that it performs:
+* Read rule definition. Here is a list of avaialbe rule definitions:
+** FDA_VR1_6: FDA Validator Rules v1.6 December 2022_0
+** SDTM_V2_0: SDTM and SDTMIG Conformance Rules_v2.0
+** SEND_V4_0: SEND Conformance Rules v4.0
+** ADAM_V4_0: ADaM Conformance Rules v4.0
+* Get rule statistics if `get_db_rule` or `pub2db` is enabled.
+* Back up current rule 
+* Get existing rule if the rule exists in the database or in local rule folder
+* Check rule citation agaist rule definition 
+* Add missing citation to the rule
+* Write the rule to target folders in JSON and YAML format
+* Publish the rule to the database if `pub2db` is enabled
 
 ## Installation
 
-To install RuleBuilder, run the following command:
+To install `RuleBuilder` class, run the following command:
 ```python
-pip install rulebuilder
+pip install crbuilder
 ```
-
 
 ## Usage
 
 The `RuleBuilder` class can be used to process conformance rules in three main 
 steps: 
 * initialize the rule builder, 
-* build a single rule, or process all rules.
+* build a single rule, or process a list of rules or all rules.
 
 ### Initialize
 
@@ -34,7 +45,7 @@ class. It takes the following command-line options:
 --creator_url: the URL for the rule editor (default: 'https://rule-editor.cdisc.org/.auth/me')
 ```
 
-To initialize a new instance of the RuleBuilder class, run the following command:
+To initialize a new instance of the `RuleBuilder` class, run the following command:
 
 ```Python 
 rulebuilder initialize
