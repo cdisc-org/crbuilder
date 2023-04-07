@@ -2,7 +2,7 @@
 # -----------------------------------------------------------------------------
 # History: MM/DD/YYYY (developer) - description
 #   04/06/2023 (htu) - ported from proc_sdtm_rules as proc_rules module
-#   04/07/2023 (htu) - added r_standard 
+#   04/07/2023 (htu) - added r_standard and db_cfg 
 #  
 
 import os
@@ -29,7 +29,8 @@ def proc_rules(r_standard,
                 s_class: list = [], s_domain: list = [],
                 wrt2log: int = 0, pub2db: int = 0,
                 get_db_rule: int = 0,
-                db_name:str=None, ct_name:str=None 
+                db_name:str=None, ct_name:str=None,
+                db_cfg = None  
                 ) -> None:
     """
     Process all rule definitions in `df_data`, and output a YAML and JSON
@@ -91,7 +92,8 @@ def proc_rules(r_standard,
     w2log = os.getenv("write2log")
     log_dir = os.getenv("log_dir")
     job_id = now_utc.strftime("%Y%m%d_%H%M%S")
-    rst_fn = log_dir + "/crb-" + job_id + ".xlsx"
+    s_dir  = now_utc.strftime("/%Y/%m/")
+    rst_fn = log_dir + s_dir + f"job-{job_id}-proc.xlsx"
     w2log = 0 if w2log is None else int(w2log)
     if w2log > wrt2log:
         wrt2log = w2log 
@@ -151,17 +153,19 @@ def proc_rules(r_standard,
 
     v_stp = 1.4 
     if pub2db > 0 or get_db_rule > 0:
-        if db_name is None and ct_name is None:
+        if db_name is None and ct_name is None and db_cfg is None:
             v_msg = "When publishing to a DB, database and container names are required."
             echo_msg(v_prg, v_stp, v_msg, 0)
             return
-        db_cfg = get_db_cfg(db_name=db_name,ct_name=ct_name)
+        if db_cfg is None:
+            db_cfg = get_db_cfg(db_name=db_name,ct_name=ct_name)
         if 'ct_conn' not in db_cfg.keys(): 
             v_msg = "Could not create container connection for C/D: {ct_name}/{db_name}"
             echo_msg(v_prg, v_stp, v_msg, 0)
             return
         v_stp = 1.42
-        r_ids = get_doc_stats(db=db_name,ct=ct_name,wrt2file=wrt2log)
+        r_ids = get_doc_stats(db=db_name,ct=ct_name,wrt2file=wrt2log,
+                              job_id=job_id,db_cfg=db_cfg)
     else:
         r_ids = {}
 
@@ -176,33 +180,42 @@ def proc_rules(r_standard,
     num_selected = len(s_version)
     df = df_data if num_selected == 0 else df_data[
         df_data["SDTMIG Version"].isin(s_version)]
-    v_msg = "Select by IG Version (" + ", ".join(s_version) + "): " + str(df.shape[0])
+    v_s1 = ", ".join(s_version)
+    v_s2 = f"{df.shape[0]}/{df_data.shape[0]}"
+    v_msg = f"Select by IG Version ({num_selected}:{v_s1}): {v_s2} "
     echo_msg(v_prg, v_stp, v_msg,2)
 
     # 2.2 select by class
     v_stp = 2.2
     num_selected = len(s_class)
+    num_df = df.shape[0]
     df = df if num_selected == 0 else df[df["Class"].isin(s_class)]
-    v_msg = "Select by Class (" + ", ".join(s_class) + "): " + str(df.shape[0])
+    v_s1 = ", ".join(s_class)
+    v_s2 = f"{num_df}/{df.shape[0]}"
+    v_msg = f"Select by IG Class ({num_selected}:{v_s1}): {v_s2} "
     echo_msg(v_prg, v_stp, v_msg, 2)
 
     # 2.3 select by domain 
     v_stp = 2.3
     num_selected = len(s_domain)
+    num_df = df.shape[0]
     df = df if num_selected == 0 else df[df["Domain"].isin(s_domain)]
-    v_msg = "Select by Domain (" + ", ".join(s_domain) + "): " + str(df.shape[0])
+    v_s1 = ", ".join(s_domain)
+    v_s2 = f"{num_df}/{df.shape[0]}"
+    v_msg = f"Select by IG Domain ({num_selected}:{v_s1}): {v_s2} "
     echo_msg(v_prg, v_stp, v_msg, 2)
 
     # 2.4 select by rule ids
     v_stp = 2.4
     num_selected = len(rule_ids)
     df = df if num_selected == 0 else df[df["Rule ID"].isin(rule_ids)]
-    v_msg = "Select by Rule IDs (" + ", ".join(rule_ids) + "): " + str(df.shape[0])
+    v_ids = ", ".join(rule_ids)
+    v_msg = f" . Select by Rule IDs ({v_ids}): {df.shape[0]}"
     echo_msg(v_prg, v_stp, v_msg, 2)
 
     v_msg  = "INFO:Selected number of rules: " + str(df.shape[0])
     v_msg += "/" + str(num_records_processed)
-    echo_msg(v_prg, v_stp, v_msg,1)
+    echo_msg(v_prg, v_stp, v_msg,2)
 
     # 3. Loop through each rule 
     # -----------------------------------------------------------------------
@@ -220,12 +233,34 @@ def proc_rules(r_standard,
                                    "class", "domain", "variable", "rule_type", 
                                    "document", "section", "sensitivity",
                                    "publish_status"])
+    # capture input parameters
+    ipt_msg = f"Input Parameters:\n . Job ID: {job_id}\n"
+    ipt_msg += f" . R_Standard: {r_standard}\n"
+    ipt_msg += f" . Rule Data: {num_records_processed}\n"
+    ipt_msg += f" . Existing Rule Folder: {in_rule_folder}\n"
+    ipt_msg += f" . Output Folder: {out_rule_folder} Sub Dir: {s_dir}\n" 
+    ipt_msg += f" . Selection - Rule IDs: {','.join(rule_ids)}\n"
+    ipt_msg += f" . Selection - Versions: {','.join(s_version)}\n"
+    ipt_msg += f" . Selection - Classes: {','.join(s_class)}\n"
+    ipt_msg += f" . Selection - Domains: {','.join(s_domain)}\n"
+    ipt_msg += f" . Write2Log ({wrt2log}): {log_dir}\n"
+    ipt_msg += f" . Publish to DB ({pub2db}): {db_name}.{ct_name}\n"
+    ipt_msg += f" . Get DB Rule ({get_db_rule}): {db_name}.{ct_name}"
+ 
     rows = []
     fn_sufix = now_utc.strftime("%dT%H%M%S.txt")
+    num_grps = grouped_data.ngroups
+    i_grp = 0
+    v_stp = 3.1 
     for rule_id, group in grouped_data:
+        i_grp += 1 
         st_row = dt.datetime.now()
         log_fn = f"{log_fdir}/{rule_id}-{fn_sufix}" 
         os.environ["log_fn"] = log_fn
+        v_msg = f"  {i_grp}/{num_grps}: Rule ID - {rule_id}..."
+        echo_msg(v_prg, v_stp, v_msg, 2)
+        echo_msg(v_prg, v_stp, ipt_msg,3)
+
         # if rule_id not in rule_ids: continue 
         num_records = group.shape[0]
         row = {"rule_id": None, "core_id": None,  "user_id": None,"guid_id":None, 
@@ -261,9 +296,10 @@ def proc_rules(r_standard,
         rule_obj = get_existing_rule(rule_id, in_rule_folder, 
                                      get_db_rule=get_db_rule, r_ids=r_ids,
                                      db_name=db_name,ct_name=ct_name,
+                                     db_cfg=db_cfg,
                                      use_yaml_content=False)
-        print("------------------------------------------")
-        json.dump(rule_obj, sys.stdout, indent=4)
+        echo_msg(v_prg, v_stp, rule_obj, 9)
+        # json.dump(rule_obj, sys.stdout, indent=4)
 
         # 3.5 process the rule 
         # 
@@ -322,6 +358,8 @@ def proc_rules(r_standard,
         if pub2db == 1:
             a_row= publish_a_rule(rule_id=rule_id,db_cfg=db_cfg,r_ids=r_ids)
             row.update({"publish_status": a_row["publish_status"]})
+        else:
+            row.update({"publish_status": "Not published"})
 
         # 3.9 Append the status record to rows
         rows.append(row)
@@ -329,17 +367,16 @@ def proc_rules(r_standard,
         st = st_row.strftime("%Y-%m-%d %H:%M:%S")
         et = et_row.strftime("%Y-%m-%d %H:%M:%S")
         v_msg = f"The job {job_id} for {rule_id} was done between: {st} and {et}"
-        echo_msg(v_prg, v_stp, v_msg,1)
+        echo_msg(v_prg, v_stp, v_msg,2)
 
     # End of for rule_id, group in grouped_data
 
     # Collect basic stats and print them out
     v_stp = 4.0 
     v_msg = "Get statistics..."
-    num_unique_rule_id = grouped_data.ngroups
-    v_msg = "Number of Records Processed: " + str(num_records_processed)
-    v_msg += "\n   Number of Unique Rule ID: " + str(num_unique_rule_id)
-    echo_msg(v_prg, v_stp, v_msg,2)
+    n_uniq = grouped_data.ngroups
+    v_msg = f"Number of Records Processed: {n_uniq}/{num_records_processed}"
+    echo_msg(v_prg, v_stp, v_msg,1)
 
     v_stp = 4.1
     v_msg = "Output result to " + rst_fn + "..." 
@@ -347,6 +384,7 @@ def proc_rules(r_standard,
     df_log = pd.DataFrame.from_records(rows)
     df_log.to_excel(rst_fn, index=False)
 
+    v_stp = 5.0 
     et_all = dt.datetime.now()
     st = st_all.strftime("%Y-%m-%d %H:%M:%S")
     et = et_all.strftime("%Y-%m-%d %H:%M:%S")
@@ -386,8 +424,8 @@ if __name__ == "__main__":
 
     # proc_sdtm_rules(rule_ids=["CG0002","CG0027","CG0015", "CG0063"], wrt2log=True,
     #                pub2db=1, db_name=db, ct_name=ct)
-    proc_rules(rule_ids=[], wrt2log=True, pub2db=1,
-                    get_db_rule=1, db_name=db, ct_name=ct)
+    # proc_rules(rule_ids=[], wrt2log=True, pub2db=1,
+    #                get_db_rule=1, db_name=db, ct_name=ct)
 
 
 # End of File

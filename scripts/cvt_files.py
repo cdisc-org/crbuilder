@@ -16,9 +16,9 @@ import pickle
 
 # define source data files
 source_data_files = {
-    "FDA_VR1_6": { "file_name": 'FDA_VR_v1.6.xlsx', 
+    "FDA_VR1_6": {"file_name": 'FDA Validator Rules v1.6 December 2022_0.xlsx',
                    "rule_sheet":'FDA Validator Rules v1.6' },
-    "SDTM_V2_0":{"file_name": 'SDTM_and_SDTMIG_Conformance_Rules_v2.0.xlsx', 
+    "SDTM_V2_0": {"file_name": 'SDTM_and_SDTMIG_Conformance_Rules_v2.0.xlsx',
               "rule_sheet":'SDTMIG Conformance Rules v2.0'},
     "SEND_V4_0":{"file_name": 'SEND_Conformance_Rules_v4.0.xlsx', 
               "rule_sheet":'v3.0_v3.1_v3.1.1_DARTv1.1'},
@@ -115,4 +115,6 @@ def cvt_xlsx(std: str = "SDTM_V2_0", r_dir: str = None,
 
 
 if __name__ == '__main__':
-    df = cvt_xlsx("SDTM_V2_0", s_files=source_data_files)
+    for s in source_data_files.keys(): 
+        print(f"Converting Standard - {s}...")
+        df = cvt_xlsx(s, s_files=source_data_files)

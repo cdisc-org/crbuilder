@@ -5,6 +5,9 @@
 #     https://learn.microsoft.com/en-us/python/api/overview/azure/cosmos-readme?view=azure-python#create-a-container
 #   04/04/2023 (htu) - converted code into get_db_documents
 #   04/05/2023 (htu) - added docstring
+#   04/07/2023 (htu) - 
+#     1. added job_id and populated values for doc_cnt and dup_ids 
+#     2. added db_cfg 
 #
 import os
 import pandas as pd
@@ -16,7 +19,8 @@ from azure.cosmos.exceptions import CosmosResourceNotFoundError
 
 
 def get_doc_stats(qry: str = None, db: str = 'library', 
-                  ct: str = 'editor_rules_dev', wrt2file:int=0):
+                  ct: str = 'editor_rules_dev', wrt2file:int=0, 
+                  job_id: str=None,db_cfg = None):
     """
     Retrieves statistics from a Cosmos DB container.
 
@@ -25,6 +29,7 @@ def get_doc_stats(qry: str = None, db: str = 'library',
     db (str): the name of the Cosmos DB database to connect to (default is "library")
     ct (str): the name of the Cosmos DB container to connect to (default is "editor_rules_dev")
     wrt2file (int): whether to write the result to an Excel file (1) or not (0) (default is 0)
+    db_cfg (dict): database configuration 
 
     Returns:
     A dictionary containing document statistics, where each key is a rule ID and the corresponding value is a dictionary containing the following keys:
@@ -42,7 +47,10 @@ def get_doc_stats(qry: str = None, db: str = 'library',
     v_stp = 2.0
     v_msg = "Get DB configuration..."
     echo_msg(v_prg, v_stp, v_msg, 2)
-    cfg = get_db_cfg(db_name=db, ct_name=ct)
+    if db_cfg is None: 
+        cfg = get_db_cfg(db_name=db, ct_name=ct)
+    else: 
+        cfg = db_cfg 
     ctc = cfg["ct_conn"]
 
     # 3.0 Execute the query
@@ -116,7 +124,9 @@ def get_doc_stats(qry: str = None, db: str = 'library',
         df_row.update({"guid_id": doc_id})
         df_row.update({"created": i.get("created")})
         df_row.update({"changed": i.get("changed")})
-        df_row.update({"status": core_status})
+        df_row.update({"rule_status": core_status})
+        df_row.update({"doc_cnt": r_ids[r_id]["cnt"]})
+        df_row.update({"dup_ids": r_ids[r_id]["ids"]})
 
         rows.append(df_row)
 
@@ -131,8 +141,9 @@ def get_doc_stats(qry: str = None, db: str = 'library',
     grouped_data = df_log.groupby("rule_id")
 
     for rule_id, grp in grouped_data:
-        if grp.shape[0] > 2:  
-            print(f"RuleID: {rule_id}:\n{grp}")
+        if grp.shape[0] > 1:  
+            v_msg = f"RuleID: {rule_id}:\n{grp}"
+            echo_msg(v_prg, v_stp, v_msg, 6)
 
     v_stp = 4.3 
     if wrt2file == 1: 
@@ -140,8 +151,10 @@ def get_doc_stats(qry: str = None, db: str = 'library',
         load_dotenv()
         log_dir = os.getenv("log_dir")
         tm = dt.datetime.now()
-        job_id = tm.strftime("%Y%m%d_%H%M%S")
-        rst_fn = log_dir + "/stat-" + job_id + ".xlsx"
+        s_dir = tm.strftime("/%Y/%m/")
+        if job_id is None: 
+            job_id = tm.strftime("%Y%m%d_%H%M%S")
+        rst_fn = log_dir + s_dir + f"job-{job_id}-stat.xlsx"
         v_msg = "Output result to " + rst_fn + "..." 
         echo_msg(v_prg, v_stp, v_msg,2)
         df_log.to_excel(rst_fn, index=False)
@@ -152,7 +165,8 @@ def get_doc_stats(qry: str = None, db: str = 'library',
     for i in r_ids:
         m = len(r_ids[i]["ids"])
         if m > 1:
-            print(f"{i}({m}/{n}): {r_ids[i]['ids']}")
+            v_msg = f"{i}({m}/{n}): {r_ids[i]['ids']}"
+            echo_msg(v_prg, v_stp, v_msg, 5)
     # n2 = len(r_key_with_space)
     # print(f"Docs with space keys ({n2}):\n{r_key_with_space}")
     return r_ids 

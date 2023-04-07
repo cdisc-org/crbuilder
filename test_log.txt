@@ -1,0 +1,2 @@
+TestProgram: 5.000 - Logging to: test_log.txt
+TestProgram: 6.000 - INFO: Web environment test

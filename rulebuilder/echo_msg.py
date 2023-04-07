@@ -5,9 +5,14 @@
 #   03/16/2023 (htu) - added test cases
 #   03/17/2023 (htu) - removed "\n" from fmt
 #   03/30/2023 (htu) - added logic to write to a file 
+#   04/07/2023 (htu) - 
+#     1. added YAML, and comments objects to write these objects
+#     2. added g_msg_lvl and g_log_lvl
 #
 import os
 import re
+from ruamel.yaml import YAML
+from ruamel.yaml.comments import CommentedMap, CommentedSeq
 
 def echo_msg(prg, step, msg, lvl=0, fn=None):
     """
@@ -69,8 +74,12 @@ def echo_msg(prg, step, msg, lvl=0, fn=None):
     fmt = "%s: %.3f - %s"
     f1 = "<h2>%s</h2>"
     f2 = '<font color="%s">%s</font>'
-    g_lvl = os.getenv("g_lvl")          # message level
-    d_lvl = os.getenv("d_lvl")          # debug level
+    g_msg_lvl = os.getenv("g_msg_lvl")          # Global message level
+    g_log_lvl = os.getenv("g_log_lvl")          # Global log/debug level
+    if g_msg_lvl is None: 
+        g_msg_lvl = os.getenv("g_lvl")          # message level
+    if g_log_lvl is None: 
+        g_log_lvl = os.getenv("d_lvl")          # debug level
     logfn = os.getenv("log_fn")         # log file name
     w2log = os.getenv("write2log")    # whether to write to log file: 1 - Yes, 0 - No 
     wrt2log = 0 if w2log is None else int(w2log)
@@ -78,15 +87,16 @@ def echo_msg(prg, step, msg, lvl=0, fn=None):
     http_host = os.getenv("HTTP_HOST")
     is_web = bool(query_str and http_host)
 
-    g_lvl = int(g_lvl) if g_lvl else 1
-    d_lvl = int(d_lvl) if d_lvl else 1
+    g_msg_lvl = int(g_msg_lvl) if g_msg_lvl else 1
+    g_log_lvl = int(g_log_lvl) if g_log_lvl else 1
     ofn = fn if fn else logfn
     if not msg or msg is None:
         return None
 
     # hide passwords
-    msg = re.sub(r"(\w+)/(\w+)@(\w+)", r"\1/***@\3", msg)
-    msg = re.sub(r"(password:)(\w+)", r"\1/***", msg, flags=re.IGNORECASE)
+    if isinstance(msg, str): 
+        msg = re.sub(r"(\w+)/(\w+)@(\w+)", r"\1/***@\3", msg)
+        msg = re.sub(r"(password:)(\w+)", r"\1/***", msg, flags=re.IGNORECASE)
 
     if is_web:
         if re.search(r"^\s*\d+\.\s+\w+", msg):
@@ -102,15 +112,23 @@ def echo_msg(prg, step, msg, lvl=0, fn=None):
         if re.search(r"^\s*\d+\.\s+\w+:", msg):
             print("<br>")
 
-    if lvl <= int(d_lvl) or lvl <= int(g_lvl):
+    if lvl <= int(g_msg_lvl):
         print(fmt % (prg, step, msg))
+    if lvl <= int(g_log_lvl):
         if ofn and wrt2log >= 1:
             if not os.path.isfile(ofn):
                 msg = "Logging to: " + ofn 
                 print(fmt % (__name__, 5, msg) )
-            with open(ofn, "a") as f:
-                f.write(fmt % (prg, step, msg))
-                f.write("\n")
+            if isinstance(msg, (dict, CommentedMap, CommentedSeq)):
+                y = YAML()
+                y.indent(mapping=2, sequence=4, offset=2)
+                y.preserve_quotes = True
+                with open(ofn, "a") as f: 
+                    y.dump(msg, f)
+            else: 
+                with open(ofn, "a") as f:
+                    f.write(fmt % (prg, step, msg))
+                    f.write("\n")
     return None 
 
 

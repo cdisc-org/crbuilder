@@ -3,13 +3,13 @@
 # History: MM/DD/YYYY (developer) - description
 #   03/23/2023 (htu) - initial coding
 #   04/06/2023 (htu) - added r_standard, rule_files and read_rule_definitions 
+#   04/07/2023 (htu) - added r_standard in process method 
 #   
 
 import os
 import re 
 # from abc import ABC, abstractmethod
 from abc import ABC
-import click 
 import pickle 
 import pandas as pd 
 import ruamel.yaml as yaml
@@ -49,7 +49,7 @@ class RuleBuilder(ABC):
 
         } 
         self.rule_files = rule_files 
-        v_prg = __name__
+        v_prg = __name__ + ".init"
         v_stp = 1.0
         if r_standard is None:
             v_stp = 1.1
@@ -61,6 +61,7 @@ class RuleBuilder(ABC):
         v_msg = f"Initializing rule builder for {r_std}..."
         echo_msg(v_prg, v_stp, v_msg, 1)
 
+        v_stp = 1.2 
         load_dotenv()
         r_dir = os.getenv("r_dir") if r_dir is None else r_dir
         self.r_dir = r_dir
@@ -81,6 +82,7 @@ class RuleBuilder(ABC):
         self.existing_rule_dir = r_dir + "/data/output/orig_rules"
         self.stat_cnts = {"total": 0, "renamed": 0, "skipped": 0, "dupped": 0, 
                           "ruleid_used": 0, "coreid_used": 0}
+        v_stp = 1.3 
         # self.rule_data = read_rules(self.yaml_file)
         self.rule_data = self.read_rule_definitions()
   
@@ -91,7 +93,7 @@ class RuleBuilder(ABC):
         Returns:
             A pandas DataFrame containing the rule definitions.
         """
-        v_prg = __name__
+        v_prg = __name__ + ".read_rule_definition"
         v_stp = 1.0
         v_msg = f"Reading rule definition for {self.r_standard}..."
         echo_msg(v_prg, v_stp, v_msg, 1)
@@ -184,7 +186,8 @@ class RuleBuilder(ABC):
             in_rule_folder = self.existing_rule_dir, cnt_published = num_of_published)
         return a_json 
 
-    def process(self, r_ids=None, s_version: list = [],
+    def process(self, r_standard: str = None, 
+                r_ids=None, s_version: list = [],
                 s_class: list = [], s_domain: list = [],           
                 wrt2log: int = 1, pub2db: int = 0,
                 get_db_rule: int = 1,
@@ -194,6 +197,7 @@ class RuleBuilder(ABC):
         Process the rule definitions for the specified standard.
 
         Args:
+            r_standard (str): The name of the standard for which the rule definitions are being processed (default: "SDTM_V2_0").
             r_ids (list): A list of rule IDs to include (default: None).
             s_version (list): A list of versions to include (default: []).
             s_class (list): A list of classes to include (default: []).
@@ -204,18 +208,25 @@ class RuleBuilder(ABC):
             db_name (str): The name of the database to use (default: None).
             ct_name (str): The name of the container to use (default: "core_rules_dev").
         """
-        v_prg = __name__
+        v_prg = __name__ + ".process"
         v_stp = 1.0
         v_msg = "Processing CORE rule definitions..."
-        if r_ids is None:
+        if r_standard is None:
+            r_standard = self.r_standard
+        if r_standard is None:
             v_stp = 1.1
+            v_msg = "No rule standard is provided."
+            echo_msg(v_prg, v_stp, v_msg, 0)
+            return
+        if r_ids is None:
+            v_stp = 1.2
             v_msg = "No rule id is provided. "
             echo_msg(v_prg, v_stp, v_msg, 0)
             return 
         if r_ids == "ALL":
             r_ids = [] 
 
-        v_stp = 1.2
+        v_stp = 1.3
         v_msg = "Checking parameters..." 
         echo_msg(v_prg, v_stp, v_msg, 2)
 
@@ -229,7 +240,7 @@ class RuleBuilder(ABC):
         v_stp = 2.0
         echo_msg(v_prg, v_stp, f"Calling to proc_rules", 1)
         load_dotenv() 
-        proc_rules(r_standard = self.r_standard,
+        proc_rules(r_standard = r_standard,
                     df_data=self.rule_data, 
                     in_rule_folder=self.existing_rule_dir,
                     out_rule_folder=self.output_dir,
@@ -244,49 +255,8 @@ class RuleBuilder(ABC):
                     )
 
 
-@click.group()
-def cli():
-    pass
-
-
-@cli.command()
-@click.option('--r_standard', default='SDTM_V2_0', help='The name of the standard for which the rule definitions are being processed.')
-@click.option('--r_dir', default=None, help='The directory where the rule definitions are stored.')
-@click.option('--i_fn', default='SDTM_and_SDTMIG_Conformance_Rules_v2.0.yaml', help='The name of the file that contains the rule definitions for the specified standard.')
-@click.option('--core_base_url', default='https://raw.githubusercontent.com/cdisc-org/conformance-rules-editor/main/public/schema/CORE-base.json', help='The URL for the CORE base JSON schema.')
-@click.option('--creator_url', default='https://rule-editor.cdisc.org/.auth/me', help='The URL for the rule editor.')
-def initialize(r_standard, r_dir, i_fn, core_base_url, creator_url):
-    rb = RuleBuilder(r_standard=r_standard, r_dir=r_dir, i_fn=i_fn,
-                     core_base_url=core_base_url, creator_url=creator_url)
-
-
-@cli.command()
-@click.option('--rule_id', default=None, help='The ID of the rule to build.')
-def build_rule(rule_id):
-    rb = RuleBuilder()
-    rule_json = rb.build_a_rule(rule_id)
-    print(rule_json)
-
-
-@cli.command()
-@click.option('--r_ids', default=None, help='A list of rule IDs to include.')
-@click.option('--s_version', default=[], help='A list of versions to include.')
-@click.option('--s_class', default=[], help='A list of classes to include.')
-@click.option('--s_domain', default=[], help='A list of domains to include.')
-@click.option('--wrt2log', default=1, help='A flag indicating whether to write output to a log file.')
-@click.option('--pub2db', default=0, help='A flag indicating whether to publish rules to a database.')
-@click.option('--get_db_rule', default=1, help='A flag indicating whether to get rules from a database.')
-@click.option('--db_name', default=None, help='The name of the database to use.')
-@click.option('--ct_name', default='core_rules_dev', help='The name of the container to use.')
-def process(r_ids, s_version, s_class, s_domain, wrt2log, pub2db, get_db_rule, db_name, ct_name):
-    rb = RuleBuilder()
-    rb.process(r_ids=r_ids, s_version=s_version, s_class=s_class, s_domain=s_domain,
-               wrt2log=wrt2log, pub2db=pub2db, get_db_rule=get_db_rule, db_name=db_name, ct_name=ct_name)
-
-
 # Test cases
 if __name__ == "__main__":
-    cli()
     os.environ["g_lvl"] = "3"
     v_prg = __name__ + "::rbuilder"
     # 1. Test with basic parameters
@@ -306,5 +276,4 @@ if __name__ == "__main__":
     # rb.process(r_ids=["CG0165","CG0319"])  # these two do not exist
     # rb.process(r_ids=[])    # to process all 
     rb.process(r_ids=["CG0006"])
-    cli()
 # End of File

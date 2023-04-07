@@ -19,7 +19,7 @@ def read_a_rule(rule_id:str=None, doc_id: str = None, rule_dir: str = None):
     # 1.0 check parameters
     v_stp = 1.0
     v_msg = "Read a rule file from rule_dir..."
-    echo_msg(v_prg, v_stp, v_msg, 1)
+    echo_msg(v_prg, v_stp, v_msg, 2)
 
     if rule_id is None and doc_id is None:
         v_stp = 1.1
@@ -27,13 +27,13 @@ def read_a_rule(rule_id:str=None, doc_id: str = None, rule_dir: str = None):
         echo_msg(v_prg, v_stp, v_msg, 0)
         return {}
     
+    v_stp = 1.2
     if rule_dir is None:
-        v_stp = 1.2
         v_msg = f"No rule json dir is provided."
         echo_msg(v_prg, v_stp, v_msg, 0)
         return {}
     v_msg = f" . rule_dir: {rule_dir}"
-    echo_msg(v_prg, v_stp, v_msg, 1)
+    echo_msg(v_prg, v_stp, v_msg, 3)
     
     # 2.0 search the rule in the folder
     v_stp = 2.0
@@ -43,7 +43,7 @@ def read_a_rule(rule_id:str=None, doc_id: str = None, rule_dir: str = None):
     if doc_id is not None:
         v_msg += f" / doc_id ({doc_id}) "
     # v_msg += f"from {rule_dir}"
-    echo_msg(v_prg, v_stp, v_msg, 1)
+    echo_msg(v_prg, v_stp, v_msg, 3)
 
     cnt = {"All":0, "Searched": 0, "Matched": 0}
     r_json = {}

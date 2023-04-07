@@ -30,7 +30,7 @@ def get_db_cfg (db_name:str='library',ct_name:str=None):
     v_prg = __name__
     v_stp = 1.0
     v_msg = "Configuring database connections..."
-    echo_msg(v_prg, v_stp, v_msg,1)
+    echo_msg(v_prg, v_stp, v_msg,2)
 
     if db_name is None:
         v_stp = 1.1
@@ -49,7 +49,7 @@ def get_db_cfg (db_name:str='library',ct_name:str=None):
         cln = CosmosClient(url, credential=key)
         v_msg = f"Create database client for {db_name}"
         db_cfg["db_client"] = cln
-        echo_msg(v_prg, v_stp, v_msg,2)
+        echo_msg(v_prg, v_stp, v_msg,3)
     except exceptions.CosmosResourceNotFoundError:
         v_stp = 1.22
         v_msg = f"Could not establish client connection for {db_name}"

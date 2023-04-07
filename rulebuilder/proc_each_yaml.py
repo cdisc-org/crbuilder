@@ -5,6 +5,7 @@
 #   04/05/2023 (htu) - 
 #     1. added rule_dir, get_db_rule, db_name, ct_name, and r_ids 
 #     2. updated calling to get_existing_rule parameters in Step 1.3
+#   04/07/2023 (htu) - used echo_msg to display dict datasets 
 #    
 
 import os 
@@ -40,12 +41,11 @@ def proc_each_yaml (rule_id:str=None,rule_data = None, rule_obj = None,
     v_prg = __name__
     
     v_stp = 1.0
-    echo_msg(v_prg, v_stp, "Setting parameters...", 1)
+    echo_msg(v_prg, v_stp, "Setting parameters...", 2)
     load_dotenv()
     yaml_file = os.getenv("yaml_file")
     if rule_dir is None: 
         rule_dir = os.getenv("existing_rule_dir")
-    g_lvl = int(os.getenv("g_lvl"))
 
     # 1.1 check parameters 
     v_stp = 1.1
@@ -55,14 +55,14 @@ def proc_each_yaml (rule_id:str=None,rule_data = None, rule_obj = None,
         return None
     else:
         v_msg = "Rule ID - " + rule_id + " will be processed."
-        echo_msg(v_prg, v_stp, v_msg, 2)
+        echo_msg(v_prg, v_stp, v_msg, 3)
 
     # 1.2 get rule data
     v_stp = 1.2
     if rule_data is None:
         v_stp = 1.2
         v_msg = "Get Rule Data from " + yaml_file 
-        echo_msg(v_prg, v_stp, v_msg, 2)
+        echo_msg(v_prg, v_stp, v_msg, 3)
         rule_data = read_rules(yaml_file)
         rule_data = rule_data[rule_data["Rule ID"]==rule_id]
         rule_data = rule_data.reset_index(drop=True)
@@ -71,7 +71,7 @@ def proc_each_yaml (rule_id:str=None,rule_data = None, rule_obj = None,
     # 1.3 get rule object - existing rule 
     v_stp = 1.3
     v_msg = "Get rule object from rule folder: " + rule_dir
-    echo_msg(v_prg, v_stp, v_msg, 2)
+    echo_msg(v_prg, v_stp, v_msg, 3)
 
     y1 = YAML()
     y1.indent(mapping=2, sequence=4, offset=2)
@@ -85,18 +85,16 @@ def proc_each_yaml (rule_id:str=None,rule_data = None, rule_obj = None,
                                      db_name=db_name,ct_name=ct_name,
                                      use_yaml_content=False)
         
-    if g_lvl >= 5:
-        print("---------- Existing Rule Object ----------")
-        # yaml_loader.dump(y_content, sys.stdout)
-        # print(rule_obj)
-        yaml.dump(rule_obj, sys.stdout)
-        print("---------- Existing Rule Object(json.Check) ----------")
-        y1.dump(rule_obj.get("json",{}).get("Check"), sys.stdout)
+    #  print("---------- Existing Rule Object(json.Check) ----------")
+    v_check =  rule_obj.get("json",{}).get("Check")
+    v_msg = "---------- Existing Rule Object(json.Check) ----------"
+    echo_msg(v_prg, v_stp,v_msg, 9)
+    echo_msg(v_prg, v_stp, v_check, 9)
     
     # 1.4 get rule parameters
     v_stp = 1.4
     v_msg = "Get rule parameters"
-    echo_msg(v_prg, v_stp, v_msg, 2)
+    echo_msg(v_prg, v_stp, v_msg, 3)
 
     v_status = rule_obj.get("json", {}).get("Core", {}).get("Status")
     v_creator_id = rule_obj.get("creator", {}).get("id")
@@ -116,11 +114,9 @@ def proc_each_yaml (rule_id:str=None,rule_data = None, rule_obj = None,
     c0 = rule_obj.get("content")
     c1 = {} if c0 is None else y1.load(c0)
     
-    if g_lvl >= 5:
-        print("---------- Existing Rule Content (C1) ----------")
-        # yaml_loader.dump(y_content, sys.stdout)
-        # print(c1)
-        y1.dump(c1, sys.stdout)
+    v_msg = "---------- Existing Rule Content (C1) ----------"
+    echo_msg(v_prg, v_stp, v_msg, 9)
+    echo_msg(v_prg, v_stp, c1, 9)
 
     if c1 is not None:  
         v_stp = 1.51
@@ -140,22 +136,19 @@ def proc_each_yaml (rule_id:str=None,rule_data = None, rule_obj = None,
         v_msg = "Json Core Status (" + str(v_status) + " != " + str(y_status)
         echo_msg(v_prg, v_stp, v_msg, 3)
 
-    if g_lvl >= 5:
-        print("---------- Existing Rule Content (Y2) ----------")
-        # yaml_loader.dump(y_content, sys.stdout)
-        # print(c1)
-        y1.dump(y2, sys.stdout)
+    v_msg = "---------- Existing Rule Content (Y2) ----------"
+    echo_msg(v_prg, v_stp, v_msg, 9)
+    echo_msg(v_prg, v_stp, y2, 9)
 
     # yt = ry.dump_all(y2, Dumper=ry.RoundTripDumper)
 
     y_autho = get_yaml_authorities(rule_data,y2)
-    if g_lvl >= 5:
-        print("---------- Rule Authorities (Y_AUTHO) ----------")
-        # yaml_loader.dump(y_content, sys.stdout)
-        # print(c1)
-        y1.dump(y_autho, sys.stdout)
-        print("---------- Rule Authorities (json.Check) ----------")
-        y1.dump(y2.get("Check"), sys.stdout)
+    v_msg = "---------- Rule Authorities (Y_AUTHO) ----------"
+    echo_msg(v_prg, v_stp, v_msg, 9)
+    echo_msg(v_prg, v_stp, y_autho, 9)
+    v_msg = "---------- Rule Authorities (json.Check) ----------"
+    echo_msg(v_prg, v_stp, v_msg, 9)
+    echo_msg(v_prg, v_stp, y2.get("Check"), 9)
 
     # yaml_text = ry.dump_all(y_autho, Dumper=ry.RoundTripDumper)
     # print(f"YAML AUTHO: {yaml_text}")
@@ -220,9 +213,9 @@ def proc_each_yaml (rule_id:str=None,rule_data = None, rule_obj = None,
     # # rule_obj["json"]["Check"] = {"Check": get_check(rule_data)}  
     # rule_obj["json"]["Check"] = get_check(
     #     rule_data, exist_rule_data=rule_obj)
-    if g_lvl >= 5:
-        print("---------- Final check 1 (json.Check) ----------")
-        y1.dump(y2.get("Check"), sys.stdout)
+    v_msg = "---------- Final check 1 (json.Check) - ---------"
+    echo_msg(v_prg, v_stp, v_msg, 9)
+    echo_msg(v_prg, v_stp, y2.get("Check"), 9)
 
     y2["Check"] = get_check(
         rule_data, exist_rule_data=y2)
@@ -240,9 +233,9 @@ def proc_each_yaml (rule_id:str=None,rule_data = None, rule_obj = None,
     content.close()
 
     # rule_obj["content"] = ry.round_trip_load(y2)
-    if g_lvl >= 5:
-        print("---------- Final check 2 (json.Check) ----------")
-        y1.dump(y2.get("Check"), sys.stdout)
+    v_msg = "---------- Final check 2 (json.Check) - ---------"
+    echo_msg(v_prg, v_stp, v_msg, 9)
+    echo_msg(v_prg, v_stp, y2.get("Check"), 9)
 
     return rule_obj 
 

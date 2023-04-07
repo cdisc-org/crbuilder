@@ -14,8 +14,8 @@ datasets. Here is a list of steps that it performs:
 * Back up current rule(s) 
 * Get existing rule if the rule exists in the database or in local rule folder
 * Check rule citation agaist rule definition 
-* Add missing citation to the rule
-* Write the rule to target folders in JSON and YAML format
+* Add missing citations to the rule
+* Write the rule to target folders in JSON and YAML formats
 * Publish the rule to the database if `pub2db` is enabled
 
 ## Installation
@@ -37,7 +37,7 @@ steps:
 The `initialize` command is used to create a new instance of the `RuleBuilder` 
 class. It takes the following command-line options:
 
-```sql
+```java
 --r_standard: the name of the standard for which the rule definitions are being processed (default: 'SDTM_V2_0')
 --r_dir: the directory where the rule definitions are stored (default: None)
 --i_fn: the name of the file that contains the rule definitions for the specified standard (default: 'SDTM_and_SDTMIG_Conformance_Rules_v2.0.yaml')
@@ -47,7 +47,7 @@ class. It takes the following command-line options:
 
 To initialize a new instance of the `RuleBuilder` class, run the following command:
 
-```Python 
+```java 
 rulebuilder initialize
 ```
 
@@ -64,7 +64,6 @@ command-line options:
 --rule_id: the ID of the rule to build (default: None)
 ```
 
-
 Replace `<rule_id>` with the ID of the rule you want to build.
 
 ### Process All Rules
@@ -72,7 +71,7 @@ Replace `<rule_id>` with the ID of the rule you want to build.
 The `process` command is used to process all rules. It takes the following 
 command-line options:
 
-```sql
+```java
 --r_ids: a list of rule IDs to include (default: None)
 --s_version: a list of versions to include (default: [])
 --s_class: a list of classes to include (default: [])
@@ -86,7 +85,7 @@ command-line options:
 
 To process all rules with the `RuleBuilder` class, run the following command:
 
-```
+```java
 rulebuilder process
 ```
 
@@ -106,7 +105,7 @@ This project is licensed under the MIT License - see the LICENSE.md file for det
 
 ### Version 0.3.1
 
-* Moved from my personal repo (core-rule-builder) to CDISC repo (crbuilder)
+* Moved from my personal repo [core-rule-builder](https://github.com/htu/core-rule-builder) to CDISC repo [crbuilder](https://github.com/cdisc-org/crbuilder)
 * Added command-line options
 * Added README 
 * Added backup as a default behavior while getting rule definition from database

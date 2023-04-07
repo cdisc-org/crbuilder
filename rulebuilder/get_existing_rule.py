@@ -45,7 +45,6 @@ def get_existing_rule(rule_id, in_rule_folder,
     """
     v_prg = __name__
     v_stp = 1.0
-    g_lvl = int(os.getenv("g_lvl"))
     v_msg = "Checking input parameters..."
     echo_msg(v_prg, v_stp, v_msg, 2)
 
@@ -123,9 +122,12 @@ def get_existing_rule(rule_id, in_rule_folder,
     v_msg = "Y Content Obj Type: " + str(type(y_content))
     echo_msg(v_prg, v_stp, v_msg, 5)
 
-    if g_lvl >= 5:
-        print("========== Rule Content ==========")
-        yaml_loader.dump(y_content, sys.stdout)
+    echo_msg(v_prg, v_stp, "========== Rule Content ==========",9)
+    echo_msg(v_prg, v_stp, y_content, 9)
+
+    # if g_lvl >= 5:
+    #    print("========== Rule Content ==========")
+    #    yaml_loader.dump(y_content, sys.stdout)
 
     if rule_guid is not None and use_yaml_content: 
         v_stp = 3.3

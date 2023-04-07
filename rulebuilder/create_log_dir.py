@@ -18,7 +18,7 @@ def create_log_dir(log_dir: str = None, job_id: str = None,
     # 1.0 check inputs 
     v_stp = 1.0 
     v_msg = "Checking input parameters..."
-    echo_msg(v_prg, v_stp, v_msg, 1)
+    echo_msg(v_prg, v_stp, v_msg, 2)
     load_dotenv()
     now_utc = datetime.now(timezone.utc)
     w2log = os.getenv("write2log")
@@ -51,9 +51,9 @@ def create_log_dir(log_dir: str = None, job_id: str = None,
     if not os.path.exists(log_dir):
         v_stp = 2.1
         v_msg = f"Could not find log dir: {log_dir}"
-        echo_msg(v_prg, v_stp, v_msg, 2)
+        echo_msg(v_prg, v_stp, v_msg, 3)
         v_msg = f"Making dir - {log_dir}"
-        echo_msg(v_prg, v_stp, v_msg, 2)
+        echo_msg(v_prg, v_stp, v_msg, 3)
         os.makedirs(log_dir)
 
     log_fdir = log_dir + sub_dir
@@ -61,9 +61,9 @@ def create_log_dir(log_dir: str = None, job_id: str = None,
     if not os.path.exists(log_fdir):
         v_stp = 2.2
         v_msg = f"Could not find log dir: {log_fdir}"
-        echo_msg(v_prg, v_stp, v_msg, 2)
+        echo_msg(v_prg, v_stp, v_msg, 3)
         v_msg = f"Making dir - {log_fdir}"
-        echo_msg(v_prg, v_stp, v_msg, 2)
+        echo_msg(v_prg, v_stp, v_msg, 3)
         os.makedirs(log_fdir)
     
     fn=f"{fn_root}-{job_id}.{fn_sufix}"

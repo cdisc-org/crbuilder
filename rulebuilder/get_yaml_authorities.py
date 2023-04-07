@@ -80,7 +80,7 @@ def get_yaml_authorities(rule_data, exist_rule_data):
         v_item = row.get("Item")
         rule_id = row.get("Rule ID")
         v_sdtmig_version = row.get("SDTMIG Version")
-        v_msg = print(f"  {i:02d} Rule ID - {rule_id}: {v_sdtmig_version}")
+        v_msg = f"  {i:02d} Rule ID - {rule_id}: {v_sdtmig_version}"
         echo_msg(v_prg, v_stp, v_msg,4)
         r_a_cit = {"Cited_Guidance": row.get("Cited Guidance"),
                    "Document": row.get("Document"),

@@ -6,6 +6,7 @@
 #   04/04/2023 (htu) -
 #     1. changed "Rule Identifier" to Rule_Identifier
 #     2. added step 4.1 to backup docs before replacing it 
+#   04/07/2023 (htu) - added get_db_rule 
 #
 
 import os
@@ -19,7 +20,7 @@ from azure.cosmos.exceptions import CosmosResourceNotFoundError
 
 
 def publish_a_rule(rule_id = None, doc_id:str=None, rule_dir:str=None, 
-                   db_cfg = None, r_ids = None):
+                   db_cfg = None, r_ids = None, get_db_rule:int=0):
     """
     Publishes a rule to a Cosmos DB container.
 
@@ -39,10 +40,9 @@ def publish_a_rule(rule_id = None, doc_id:str=None, rule_dir:str=None,
     """
     v_prg = __name__
     v_stp = 1.0
-    g_lvl = int(os.getenv("g_lvl"))
     log_fn = os.getenv("log_fn") 
     v_msg = "Getting existing rule..."
-    echo_msg(v_prg, v_stp, v_msg, 1)
+    echo_msg(v_prg, v_stp, v_msg, 2)
 
     # 1.1 check rul_json_dir 
     v_stp = 1.1
@@ -57,7 +57,7 @@ def publish_a_rule(rule_id = None, doc_id:str=None, rule_dir:str=None,
         echo_msg(v_prg, v_stp, v_msg, 0)
         return None
     v_msg = f"Rule JSON dir: {rule_dir}"
-    echo_msg(v_prg, v_stp, v_msg, 2)
+    echo_msg(v_prg, v_stp, v_msg, 3)
 
     # 1.2 check container connection
     v_stp = 1.3 
@@ -78,34 +78,34 @@ def publish_a_rule(rule_id = None, doc_id:str=None, rule_dir:str=None,
     # 2.0 get the rule document 
     v_stp = 2.0 
     v_msg = "Get json document based on rule_id or doc_id..."
-    echo_msg(v_prg, v_stp, v_msg, 1)
+    echo_msg(v_prg, v_stp, v_msg, 3)
     r_json = read_a_rule(rule_id=rule_id, doc_id=doc_id, 
                          rule_dir=rule_dir)
 
     # 3.0 publish the documnet 
     v_stp = 3.0
     v_msg = "Get information from the document..." 
-    echo_msg(v_prg, v_stp, v_msg, 1)
+    echo_msg(v_prg, v_stp, v_msg, 3)
 
     ctc = ct_conn
     new_document = r_json 
     # if g_lvl >= 5:
     #    json.dump(new_document, sys.stdout, indent=4)
     document_id = new_document.get("id")
+    v_stp = 3.1 
     if document_id is None:
-        v_stp = 3.1 
         v_msg = "Did not find documend_id."
         echo_msg(v_prg, v_stp, v_msg, 0)
         return None 
     doc_link = f"dbs/{db}/colls/{ct}/docs/{document_id}"
     v_msg = f" . Composed Doc Link: {doc_link}"
-    echo_msg(v_prg, v_stp, v_msg, 2)
+    echo_msg(v_prg, v_stp, v_msg, 3)
 
     # 3.2 build a row to track status 
     v_stp = 3.2 
     core_id = r_json.get("json", {}).get("Core", {}).get("Id")
     v_msg = f" . Found Core ID: {core_id} in the document."
-    echo_msg(v_prg, v_stp, v_msg, 2)
+    echo_msg(v_prg, v_stp, v_msg, 3)
     r_status = None
     df_row = {"rule_id": None, "core_id": None,  "user_id": None, "guid_id": None,
               "created": None, "changed": None, "status": None, "version": None,
@@ -136,12 +136,12 @@ def publish_a_rule(rule_id = None, doc_id:str=None, rule_dir:str=None,
     # 4.0 add or replace document
     v_stp = 4.0 
     v_msg = "Publishing the document..."
-    echo_msg(v_prg, v_stp, v_msg, 1)
+    echo_msg(v_prg, v_stp, v_msg, 3)
 
     v_stp = 4.1
     v_msg = "Backing up the docuemnt first..."
     fn_path = os.path.dirname(log_fn)
-    echo_msg(v_prg, v_stp, v_msg, 2)
+    echo_msg(v_prg, v_stp, v_msg, 3)
     if r_ids is not None:
         v_stp = 4.11
         docs = r_ids[r_id]["ids"] if r_id in r_ids.keys() else None
@@ -153,7 +153,7 @@ def publish_a_rule(rule_id = None, doc_id:str=None, rule_dir:str=None,
                 e_doc = ctc.read_item(item=d_id, partition_key=d_id)
                 with open(fn, 'w') as f:
                     v_stp = 4.111
-                    v_msg = "Writing to: " + fn
+                    v_msg = "Backing up the rule to: " + fn
                     echo_msg(v_prg, v_stp, v_msg, 3)
                     json.dump(e_doc, f, indent=4)
                 # Delete the existing document
@@ -169,7 +169,7 @@ def publish_a_rule(rule_id = None, doc_id:str=None, rule_dir:str=None,
 
     v_stp = 4.2
     v_msg = "Let's publish the document..."
-    echo_msg(v_prg, v_stp, v_msg, 2)
+    echo_msg(v_prg, v_stp, v_msg, 3)
     try:
         v_stp = 4.21
         # Check if the document exists
@@ -177,12 +177,12 @@ def publish_a_rule(rule_id = None, doc_id:str=None, rule_dir:str=None,
             item=document_id, partition_key=document_id)
         e_doc_id = existing_document.get("id")
         v_msg = f"Found it: ({document_id})=({e_doc_id})"
-        echo_msg(v_prg, v_stp, v_msg, 2)
+        echo_msg(v_prg, v_stp, v_msg, 3)
 
         # Get the self link of the existing document
         document_link = existing_document["_self"]
         v_msg = f" . Existing Doc Link: {document_link}"
-        echo_msg(v_prg, v_stp, v_msg, 2)
+        echo_msg(v_prg, v_stp, v_msg, 3)
 
         # # If the document exists, replace it with the new document
         # ctc.replace_item(item=document_link, body=new_document,
@@ -194,12 +194,12 @@ def publish_a_rule(rule_id = None, doc_id:str=None, rule_dir:str=None,
         # Delete the existing document
         ctc.delete_item(item=existing_document, partition_key=document_id)
         v_msg = f" . Document with id {document_id} deleted."
-        echo_msg(v_prg, v_stp, v_msg, 2)
+        echo_msg(v_prg, v_stp, v_msg, 3)
 
         # Create a new document with the same id
         ctc.create_item(body=new_document, partition_key=document_id)
         v_msg = f" . Document with id {document_id} created."
-        echo_msg(v_prg, v_stp, v_msg, 2)
+        echo_msg(v_prg, v_stp, v_msg, 3)
         if r_status is None: 
             r_status = "Replaced"
     except CosmosResourceNotFoundError:
@@ -207,7 +207,7 @@ def publish_a_rule(rule_id = None, doc_id:str=None, rule_dir:str=None,
         # If the document does not exist, create it
         ctc.create_item(body=new_document, partition_key=document_id)
         v_msg = f"  Document with id {document_id} created."
-        echo_msg(v_prg, v_stp, v_msg, 2)
+        echo_msg(v_prg, v_stp, v_msg, 3)
         if r_status is None: 
             r_status = "Added"
 

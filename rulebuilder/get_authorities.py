@@ -99,7 +99,7 @@ def get_authorities(rule_data, exist_rule_data: dict = {}):
         # rule_id         = df_rules.iloc[i]["Rule ID"]
         v_item = row.get("Item")
         rule_id = row.get("Rule ID")
-        v_msg = print(f"  {i:02d} Rule ID - {rule_id}")
+        v_msg = f"  {i:02d} Rule ID - {rule_id}"
         echo_msg(v_prg, v_stp, v_msg,3)
 
         # r_a_cit = {"Cited_Guidance": df_rules.iloc[i]["Cited Guidance"],

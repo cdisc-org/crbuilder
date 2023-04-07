@@ -2,8 +2,10 @@
 data/
 baks/
 baks.bak/
+logs/
 .DS_Store 
 .DS_Store.bak
+
 
 # 03/16/2023: filter out sphinx documents
 _build/
