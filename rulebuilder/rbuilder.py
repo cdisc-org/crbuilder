@@ -2,43 +2,152 @@
 # -----------------------------------------------------------------------------
 # History: MM/DD/YYYY (developer) - description
 #   03/23/2023 (htu) - initial coding
+#   04/06/2023 (htu) - added r_standard, rule_files and read_rule_definitions 
 #   
 
 import os
+import re 
 # from abc import ABC, abstractmethod
 from abc import ABC
+import pickle 
+import pandas as pd 
+import ruamel.yaml as yaml
+from dotenv import load_dotenv
 from rulebuilder.echo_msg import echo_msg
-from rulebuilder.read_rules import read_rules
-from rulebuilder.get_creator_id import get_creator_id
-from rulebuilder.proc_sdtm_rules import proc_sdtm_rules
+from rulebuilder.proc_rules import proc_rules
 from rulebuilder.proc_each_sdtm_rule import proc_each_sdtm_rule
 
 class RuleBuilder(ABC):
     def __init__(self, 
-                 r_dir: str = "/Volumes/HiMacData/GitHub/data/core-rule-builder",
+                 r_standard: str = "SDTM_V2_0",
+                 r_dir: str = None,
                  i_fn: str = "SDTM_and_SDTMIG_Conformance_Rules_v2.0.yaml",
                  core_base_url: str = "https://raw.githubusercontent.com/cdisc-org/conformance-rules-editor/main/public/schema/CORE-base.json",
                  creator_url: str = "https://rule-editor.cdisc.org/.auth/me"
                 ):
+        rule_files = {
+            "FDA_VR1_6": {"file_name": 'FDA_VR_v1.6.xlsx',
+                          "rule_sheet": 'FDA Validator Rules v1.6',
+                          "yaml":"fda_vr1_6.yaml", "pick":"fda_vr1_6.pick"},
+            "SDTM_V2_0": {"file_name": 'SDTM_and_SDTMIG_Conformance_Rules_v2.0.xlsx',
+                          "rule_sheet": 'SDTMIG Conformance Rules v2.0'},
+            "SEND_V4_0": {"file_name": 'SEND_Conformance_Rules_v4.0.xlsx',
+                          "rule_sheet": 'v3.0_v3.1_v3.1.1_DARTv1.1'},
+            "ADAM_V4_0": {"file_name": 'ADaM_Conformance_Rules_v4.0.xlsx',
+                          "rule_sheet": 'ADaM Conformance Rules v4.0'},
+
+        } 
+        self.rule_files = rule_files 
+        v_prg = __name__
+        v_stp = 1.0
+        if r_standard is None:
+            v_stp = 1.1
+            v_msg = "Standard name is not provided."
+            echo_msg(v_prg, v_stp, v_msg, 0)
+            return 
+        r_std = r_standard.upper()
+        self.r_standard = r_std
+        v_msg = f"Initializing rule builder for {r_std}..."
+        echo_msg(v_prg, v_stp, v_msg, 1)
+
+        load_dotenv()
+        r_dir = os.getenv("r_dir") if r_dir is None else r_dir
         self.r_dir = r_dir
-        self.i_fn = i_fn
+        self.sheet_name = rule_files.get(r_std,{}).get("rule_sheet")
+        self.fn_xlsx = rule_files.get(r_std, {}).get("file_name")
+        self.fn_yaml = r_std.lower() + ".yaml"
+        self.fn_pick = r_std.lower() + ".pick"
+        self.i_fn = self.fn_xlsx                            # keep for compatability
+        self.fp_xlsx = r_dir + "/data/source/xlsx/" + self.fn_xlsx
+        self.fp_yaml = r_dir + "/data/source/yaml/" + self.fn_yaml
+        self.fp_pick = r_dir + "/data/source/pick/" + self.fn_pick
+
         self.core_base_url = core_base_url
         self.creator_url = creator_url
+
         self.yaml_file = r_dir + "/data/target/" + i_fn 
         self.output_dir = r_dir + "/data/output"
-        self.existing_rule_dir = r_dir + "/data/output/json_rules1"
+        self.existing_rule_dir = r_dir + "/data/output/orig_rules"
         self.stat_cnts = {"total": 0, "renamed": 0, "skipped": 0, "dupped": 0, 
                           "ruleid_used": 0, "coreid_used": 0}
-        self.rule_data = read_rules(self.yaml_file)
-        creator_id = get_creator_id(creator_url)
-        self.rule_obj = {
-            "id": "example-id",
-            "created": "2023-03-08T12:00:00Z",
-            "changed": "2023-03-08T12:00:00Z",
-            "creator": {"id": creator_id},
-            "content": "example-content",
-            "json": {}
-        }
+        # self.rule_data = read_rules(self.yaml_file)
+        self.rule_data = self.read_rule_definitions()
+  
+    def read_rule_definitions (self):
+        v_prg = __name__
+        v_stp = 1.0
+        v_msg = f"Reading rule definition for {self.r_standard}..."
+        echo_msg(v_prg, v_stp, v_msg, 1)
+        # 1.1 read from a pickled file 
+        fn = self.fp_pick
+        v_stp = 1.1
+        if os.path.isfile(fn):
+            v_msg = f" . from {fn}..."
+            echo_msg(v_prg, v_stp, v_msg, 2)
+            with open(fn, 'rb') as f:
+                # Deserialize the object from the file
+                data = pickle.load(f)
+            # Create a DataFrame from the loaded data
+            df = pd.DataFrame(data)
+            v_msg = f" . The dataset has {df.shape[0]} records. "
+            echo_msg(v_prg, v_stp, v_msg, 2)
+            return df 
+        else:
+            v_msg = f" . Could not find pickled file: {fn}."
+        echo_msg(v_prg, v_stp, v_msg, 2)
+
+        
+        # 1.2 read from a yaml file 
+        fn = self.fp_yaml 
+        v_stp = 1.2
+        if os.path.isfile(fn):
+            v_msg = f" . from {fn}..."
+            echo_msg(v_prg, v_stp, v_msg, 2)
+            with open(fn, "r") as f:
+                data = yaml.safe_load(f)
+            # Create DataFrame from YAML data
+            df = pd.DataFrame(data)
+            v_msg = f" . The dataset has {df.shape[0]} records. "
+            echo_msg(v_prg, v_stp, v_msg, 2)
+            return df
+        else:
+            v_msg = f" . Could not find yaml file: {fn}."
+        echo_msg(v_prg, v_stp, v_msg, 2)
+        
+        # 1.3 read from the original xlsx file 
+        fn = self.fp_xlsx
+        v_stp = 1.3
+        if os.path.isfile(fn):
+            v_msg = f" . from {fn}..."
+            echo_msg(v_prg, v_stp, v_msg, 2)
+
+            s_name = self.sheet_name
+            if fn.startswith('FDA'):
+                df = pd.read_excel(fn, sheet_name=s_name,
+                           header=1, engine='openpyxl')
+            else:
+                df = pd.read_excel(fn, sheet_name=s_name, engine='openpyxl')
+            # remove newline breaks in column names
+            df.columns = df.columns.str.replace('\n', '')
+            df.columns = df.columns.str.lstrip()           # remove leading spaces
+            df.columns = df.columns.str.rstrip()           # remove trailing spaces
+            # remove newline breaks in data
+            df = df.fillna('')                              # fill na with ''
+            df = df.applymap(lambda x: re.sub(r'\n\n+', '\n', str(x)))
+
+            # Convert the dataframe to a dictionary
+            df = df.to_dict(orient='records')
+            v_msg = f" . The dataset has {df.shape[0]} records. "
+            echo_msg(v_prg, v_stp, v_msg, 2)
+            return df
+        else:
+            v_msg = f" . Could not find xlsx file: {fn}."
+        echo_msg(v_prg, v_stp, v_msg, 2)
+        
+        v_msg = "We did not find any rule definition file to be read."
+        echo_msg(v_prg, v_stp, v_msg, 0)
+        return pd.DataFrame()
+
 
     def build_a_rule(self, rule_id):
         df_data = self.rule_data
@@ -49,17 +158,50 @@ class RuleBuilder(ABC):
             in_rule_folder = self.existing_rule_dir, cnt_published = num_of_published)
         return a_json 
 
-    def process(self,r_ids:list=["CG0001"]):
+    def process(self, r_ids=None, s_version: list = [],
+                s_class: list = [], s_domain: list = [],           
+                wrt2log: int = 1, pub2db: int = 0,
+                get_db_rule: int = 1,
+                db_name: str = None, ct_name: str = "core_rules_dev"
+                ):
         v_prg = __name__
-
-        df_data = self.rule_data
-        json_obj = self.rule_obj
-
-        # 1. Test with basic parameters
         v_stp = 1.0
-        echo_msg(v_prg, v_stp, "Test Case 01: Basic Parameter", 1)
-        proc_sdtm_rules(df_data, json_obj, r_ids,
-                        self.existing_rule_dir,  self.output_dir)
+        v_msg = "Processing CORE rule definitions..."
+        if r_ids is None:
+            v_stp = 1.1
+            v_msg = "No rule id is provided. "
+            echo_msg(v_prg, v_stp, v_msg, 0)
+            return 
+        if r_ids == "ALL":
+            r_ids = [] 
+
+        v_stp = 1.2
+        v_msg = "Checking parameters..." 
+        echo_msg(v_prg, v_stp, v_msg, 2)
+
+        if db_name is None:
+            db_name = os.getenv("DEV_COSMOS_DATABASE")
+        if ct_name is None:
+            ct_name = os.getenv("DEV_COSMOS_CONTAINER")
+
+
+        # 2. Call to the rule processor 
+        v_stp = 2.0
+        echo_msg(v_prg, v_stp, f"Calling to proc_rules", 1)
+        load_dotenv() 
+        proc_rules(r_standard = self.r_standard,
+                    df_data=self.rule_data, 
+                    in_rule_folder=self.existing_rule_dir,
+                    out_rule_folder=self.output_dir,
+                    rule_ids=r_ids, 
+                    s_version=s_version,
+                    s_class=s_class, 
+                    s_domain=s_domain,
+                    wrt2log=wrt2log, 
+                    pub2db=pub2db,
+                    get_db_rule=get_db_rule,
+                    db_name=db_name, ct_name=ct_name
+                    )
 
 
 # Test cases
@@ -75,7 +217,7 @@ if __name__ == "__main__":
     # 2. Test with basic parameters
     v_stp = 1.0
     echo_msg(v_prg, v_stp, "Test Case 02: Basic Parameter", 1)
-    rb = RuleBuilder()
+    # rb = RuleBuilder()
     # rb.process(r_ids=["CG0180"])
     # rb.process(r_ids=["CG0196"])
     # rb.process(r_ids=["CG0017"])        # Class with Not (AP) 

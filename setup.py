@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name="rulebuilder",
+    name="crbuilder",
     version="0.3.1",
     author="Hanming Tu",
     author_email="hanming.tu@gmail.com",
@@ -21,6 +21,7 @@ setup(
     python_requires=">=3.6",
     install_requires=[
         "pandas==1.5.3",
+        "python-dotenv==1.0.0",
         "ruamel.yaml == 0.17.21"
     ],
 )

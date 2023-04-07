@@ -2,17 +2,13 @@
 # -----------------------------------------------------------------------------
 # History: MM/DD/YYYY (developer) - description
 #   04/01/2023 (htu) - initial coding based on get_existing_rule
+#   04/06/2023 (htu) - removed unused packages: transformer.transformer, 
+#     ruamel.yaml, datetime, sys, uuid, yaml.safe_load
 #
 
 import os
-import sys
-from datetime import datetime, timezone
-import uuid
 import json
-from ruamel.yaml import YAML, parser, scanner
 # from io import StringIO
-from transformer.transformer import Transformer
-from yaml import safe_load
 from dotenv import load_dotenv
 from rulebuilder.echo_msg import echo_msg
 

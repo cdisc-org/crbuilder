@@ -7,6 +7,7 @@
 #   03/30/2023 (htu) - added echo_msg 
 #   04/04/2023 (htu) - added creator.id for new rule
 #   04/05/2023 (htu) - added db_cfg, db_name, ct_name and r_ids and reading from a DB
+#   04/06/2023 (htu) - commented out "transformer.transformer"
 #    
 
 import os
@@ -16,7 +17,7 @@ import uuid
 import json 
 from ruamel.yaml import YAML, parser, scanner
 # from io import StringIO
-from transformer.transformer import Transformer
+# from transformer.transformer import Transformer
 from yaml import safe_load
 from dotenv import load_dotenv
 from rulebuilder.echo_msg import echo_msg
@@ -124,8 +125,8 @@ def get_existing_rule(rule_id, in_rule_folder,
 
         y_content = yaml_loader.load(r_json["content"]) or {}
          
-        r_json["json"] = Transformer.spaces_to_underscores(
-            safe_load(r_json["content"]))
+        # r_json["json"] = Transformer.spaces_to_underscores(
+        #    safe_load(r_json["content"]))
 
     return r_json 
 
