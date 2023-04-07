@@ -8,6 +8,7 @@
 #   04/04/2023 (htu) - added creator.id for new rule
 #   04/05/2023 (htu) - added db_cfg, db_name, ct_name and r_ids and reading from a DB
 #   04/06/2023 (htu) - commented out "transformer.transformer"
+#   04/07/2023 (htu) - added steps 2.11 and 2.12 to back up the rule read from the DB
 #    
 
 import os
@@ -16,15 +17,11 @@ from datetime import datetime, timezone
 import uuid
 import json 
 from ruamel.yaml import YAML, parser, scanner
-# from io import StringIO
 # from transformer.transformer import Transformer
-from yaml import safe_load
 from dotenv import load_dotenv
 from rulebuilder.echo_msg import echo_msg
-from rulebuilder.get_db_cfg import get_db_cfg
 from rulebuilder.read_a_rule import read_a_rule
 from rulebuilder.read_db_rule import read_db_rule
-from rulebuilder.get_doc_stats import get_doc_stats
 
 
 def get_existing_rule(rule_id, in_rule_folder, 
@@ -60,6 +57,19 @@ def get_existing_rule(rule_id, in_rule_folder,
         echo_msg(v_prg, v_stp, v_msg, 2)
         json_data = read_db_rule(rule_id=rule_id, db_cfg=db_cfg,r_ids=r_ids,
                                  db_name=db_name,ct_name=ct_name)
+        v_stp = 2.11
+        if not os.path.exists(in_rule_folder):
+            v_msg = "Making dir - " + in_rule_folder
+            echo_msg(v_prg, v_stp, v_msg, 3)
+            os.makedirs(in_rule_folder)
+        v_stp = 2.12
+        v_status = json_data.get(
+            "json", {}).get("Core", {}).get("Status")
+        ofn = in_rule_folder + "/" + rule_id + "-" + v_status + ".json"
+        v_msg = f"Backing up the rule to {ofn}..."
+        echo_msg(v_prg, v_stp, v_msg, 2)
+        with open(ofn, 'w') as f:
+            json.dump(json_data, f, indent=4)
     else: 
         v_stp = 2.2
         v_msg = f"Getting rule file from {in_rule_folder}..."

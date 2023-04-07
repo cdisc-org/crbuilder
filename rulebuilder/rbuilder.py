@@ -9,6 +9,7 @@ import os
 import re 
 # from abc import ABC, abstractmethod
 from abc import ABC
+import click 
 import pickle 
 import pandas as pd 
 import ruamel.yaml as yaml
@@ -25,6 +26,16 @@ class RuleBuilder(ABC):
                  core_base_url: str = "https://raw.githubusercontent.com/cdisc-org/conformance-rules-editor/main/public/schema/CORE-base.json",
                  creator_url: str = "https://rule-editor.cdisc.org/.auth/me"
                 ):
+        """
+        Initialize a new instance of the RuleBuilder class.
+
+        Args:
+            r_standard (str): The name of the standard for which the rule definitions are being processed (default: "SDTM_V2_0").
+            r_dir (str): The directory where the rule definitions are stored.
+            i_fn (str): The name of the file that contains the rule definitions for the specified standard.
+            core_base_url (str): The URL for the CORE base JSON schema.
+            creator_url (str): The URL for the rule editor.
+        """
         rule_files = {
             "FDA_VR1_6": {"file_name": 'FDA_VR_v1.6.xlsx',
                           "rule_sheet": 'FDA Validator Rules v1.6',
@@ -74,6 +85,12 @@ class RuleBuilder(ABC):
         self.rule_data = self.read_rule_definitions()
   
     def read_rule_definitions (self):
+        """
+        Read the rule definitions for the specified standard from a pickled file, a YAML file, or the original Excel file.
+
+        Returns:
+            A pandas DataFrame containing the rule definitions.
+        """
         v_prg = __name__
         v_stp = 1.0
         v_msg = f"Reading rule definition for {self.r_standard}..."
@@ -150,6 +167,15 @@ class RuleBuilder(ABC):
 
 
     def build_a_rule(self, rule_id):
+        """
+        Build a single rule JSON object for the specified rule ID.
+
+        Args:
+            rule_id (str): The ID of the rule to build.
+
+        Returns:
+            A JSON object representing the specified rule.
+        """
         df_data = self.rule_data
         rule_data = df_data[df_data["Rule ID"] == rule_id]
         num_of_published = 0
@@ -164,6 +190,20 @@ class RuleBuilder(ABC):
                 get_db_rule: int = 1,
                 db_name: str = None, ct_name: str = "core_rules_dev"
                 ):
+        """
+        Process the rule definitions for the specified standard.
+
+        Args:
+            r_ids (list): A list of rule IDs to include (default: None).
+            s_version (list): A list of versions to include (default: []).
+            s_class (list): A list of classes to include (default: []).
+            s_domain (list): A list of domains to include (default: []).
+            wrt2log (int): A flag indicating whether to write output to a log file (default: 1).
+            pub2db (int): A flag indicating whether to publish rules to a database (default: 0).
+            get_db_rule (int): A flag indicating whether to get rules from a database (default: 1).
+            db_name (str): The name of the database to use (default: None).
+            ct_name (str): The name of the container to use (default: "core_rules_dev").
+        """
         v_prg = __name__
         v_stp = 1.0
         v_msg = "Processing CORE rule definitions..."
@@ -204,8 +244,49 @@ class RuleBuilder(ABC):
                     )
 
 
+@click.group()
+def cli():
+    pass
+
+
+@cli.command()
+@click.option('--r_standard', default='SDTM_V2_0', help='The name of the standard for which the rule definitions are being processed.')
+@click.option('--r_dir', default=None, help='The directory where the rule definitions are stored.')
+@click.option('--i_fn', default='SDTM_and_SDTMIG_Conformance_Rules_v2.0.yaml', help='The name of the file that contains the rule definitions for the specified standard.')
+@click.option('--core_base_url', default='https://raw.githubusercontent.com/cdisc-org/conformance-rules-editor/main/public/schema/CORE-base.json', help='The URL for the CORE base JSON schema.')
+@click.option('--creator_url', default='https://rule-editor.cdisc.org/.auth/me', help='The URL for the rule editor.')
+def initialize(r_standard, r_dir, i_fn, core_base_url, creator_url):
+    rb = RuleBuilder(r_standard=r_standard, r_dir=r_dir, i_fn=i_fn,
+                     core_base_url=core_base_url, creator_url=creator_url)
+
+
+@cli.command()
+@click.option('--rule_id', default=None, help='The ID of the rule to build.')
+def build_rule(rule_id):
+    rb = RuleBuilder()
+    rule_json = rb.build_a_rule(rule_id)
+    print(rule_json)
+
+
+@cli.command()
+@click.option('--r_ids', default=None, help='A list of rule IDs to include.')
+@click.option('--s_version', default=[], help='A list of versions to include.')
+@click.option('--s_class', default=[], help='A list of classes to include.')
+@click.option('--s_domain', default=[], help='A list of domains to include.')
+@click.option('--wrt2log', default=1, help='A flag indicating whether to write output to a log file.')
+@click.option('--pub2db', default=0, help='A flag indicating whether to publish rules to a database.')
+@click.option('--get_db_rule', default=1, help='A flag indicating whether to get rules from a database.')
+@click.option('--db_name', default=None, help='The name of the database to use.')
+@click.option('--ct_name', default='core_rules_dev', help='The name of the container to use.')
+def process(r_ids, s_version, s_class, s_domain, wrt2log, pub2db, get_db_rule, db_name, ct_name):
+    rb = RuleBuilder()
+    rb.process(r_ids=r_ids, s_version=s_version, s_class=s_class, s_domain=s_domain,
+               wrt2log=wrt2log, pub2db=pub2db, get_db_rule=get_db_rule, db_name=db_name, ct_name=ct_name)
+
+
 # Test cases
 if __name__ == "__main__":
+    cli()
     os.environ["g_lvl"] = "3"
     v_prg = __name__ + "::rbuilder"
     # 1. Test with basic parameters
@@ -225,4 +306,5 @@ if __name__ == "__main__":
     # rb.process(r_ids=["CG0165","CG0319"])  # these two do not exist
     # rb.process(r_ids=[])    # to process all 
     rb.process(r_ids=["CG0006"])
+    cli()
 # End of File
