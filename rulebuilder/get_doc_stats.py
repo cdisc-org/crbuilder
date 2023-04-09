@@ -32,7 +32,8 @@ def get_doc_stats(qry: str = None, db: str = 'library',
     db_cfg (dict): database configuration 
 
     Returns:
-    A dictionary containing document statistics, where each key is a rule ID and the corresponding value is a dictionary containing the following keys:
+    A dictionary containing document statistics, where each key is a rule ID and the 
+    corresponding value is a dictionary containing the following keys:
         - cnt: the number of documents with this rule ID
         - ids: a list of document IDs for documents with this rule ID
     """
@@ -41,7 +42,7 @@ def get_doc_stats(qry: str = None, db: str = 'library',
 
     if qry is None:
         qry = "SELECT * FROM c"
-    query_options = {'enable_cross_partition_query': True}
+    # query_options = {'enable_cross_partition_query': True}
 
     # . 2.0 get DB configuration
     v_stp = 2.0
@@ -72,13 +73,11 @@ def get_doc_stats(qry: str = None, db: str = 'library',
     df_log = pd.DataFrame(columns=["rule_id", "core_id",  "user_id", "guid_id", 
                                    "created", "changed", "rule_status", "version", 
                                    "doc_cnt", "dup_ids"])
-    df = df_log 
     v_stp = 4.1
     v_msg = "Processing each doc..."
     echo_msg(v_prg, v_stp, v_msg, 2)
     r_ids = {}                  # contain a list of rule ids 
     r_key_with_space = {}
-    r_cnt = {}
     rows = []
     for i in doc_list:
         df_row = {"rule_id": None, "core_id": None,  "user_id": None, "guid_id": None,
@@ -151,7 +150,7 @@ def get_doc_stats(qry: str = None, db: str = 'library',
         load_dotenv()
         log_dir = os.getenv("log_dir")
         tm = dt.datetime.now()
-        s_dir = tm.strftime("/%Y/%m/")
+        s_dir = tm.strftime("/%Y/%m/%d/")
         if job_id is None: 
             job_id = tm.strftime("%Y%m%d_%H%M%S")
         rst_fn = log_dir + s_dir + f"job-{job_id}-stat.xlsx"

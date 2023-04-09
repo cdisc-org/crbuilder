@@ -20,7 +20,7 @@ from ruamel.yaml import YAML, parser, scanner
 # from transformer.transformer import Transformer
 from dotenv import load_dotenv
 from rulebuilder.echo_msg import echo_msg
-from rulebuilder.read_a_rule import read_a_rule
+from rulebuilder.read_fn_rule import read_fn_rule
 from rulebuilder.read_db_rule import read_db_rule
 
 
@@ -73,7 +73,7 @@ def get_existing_rule(rule_id, in_rule_folder,
         v_stp = 2.2
         v_msg = f"Getting rule file from {in_rule_folder}..."
         echo_msg(v_prg, v_stp, v_msg, 2)
-        json_data = read_a_rule(rule_id=rule_id,rule_dir=in_rule_folder)
+        json_data = read_fn_rule(rule_id=rule_id,rule_dir=in_rule_folder)
 
     rule_guid = json_data.get('id')
 

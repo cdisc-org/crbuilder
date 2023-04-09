@@ -4,6 +4,7 @@
 #   04/01/2023 (htu) - initial coding based on get_existing_rule
 #   04/06/2023 (htu) - removed unused packages: transformer.transformer, 
 #     ruamel.yaml, datetime, sys, uuid, yaml.safe_load
+#   04/08/2023 (htu) - renamed read_a_rule to read_fn_rule 
 #
 
 import os
@@ -13,7 +14,7 @@ from dotenv import load_dotenv
 from rulebuilder.echo_msg import echo_msg
 
 
-def read_a_rule(rule_id:str=None, doc_id: str = None, rule_dir: str = None):
+def read_fn_rule(rule_id:str=None, doc_id: str = None, rule_dir: str = None):
     v_prg = __name__
 
     # 1.0 check parameters
@@ -93,7 +94,7 @@ if __name__ == "__main__":
 
     # Test case 1: Use Rule ID
     r_id = "CG0006"
-    r_1 = read_a_rule(rule_id=r_id,rule_dir=rule_dir)
+    r_1 = read_fn_rule(rule_id=r_id,rule_dir=rule_dir)
     doc_id = r_1.get("id")
     print(f"Doc ID: {doc_id}")
     # json.dump(r_1, sys.stdout, indent=4)
@@ -101,14 +102,14 @@ if __name__ == "__main__":
     # Test case 2: Use Doc ID 
     # d_id = "9959136a-523f-4546-9520-ffa22cda8867"     # CG0006
     d_id = "6161d4d5-6c96-47e1-baeb-4e70b1ffed46"       # CG0443
-    r_2 = read_a_rule(doc_id=d_id,rule_dir=rule_dir)
+    r_2 = read_fn_rule(doc_id=d_id,rule_dir=rule_dir)
     rule_id = r_2.get("json",{}).get("Core",{}).get("Id")
     print(f"Rule ID: {rule_id}")
     # json.dump(r_2, sys.stdout, indent=4)
 
     # Test case 3: Provide both rule and doc IDs 
     d_id = "8e4ce5f6-5d7d-420c-887d-26c09b89b793"   # CG0008 
-    r_3 = read_a_rule(rule_id=r_id, doc_id=d_id, rule_dir=rule_dir)
+    r_3 = read_fn_rule(rule_id=r_id, doc_id=d_id, rule_dir=rule_dir)
     rule_id = r_3.get("json",{}).get("Core",{}).get("Id")
     print(f"r_id: {r_id}, doc_id: {d_id}, RuleID: {rule_id}")
     # json.dump(r_3, sys.stdout, indent=4)

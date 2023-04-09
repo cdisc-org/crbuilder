@@ -14,7 +14,7 @@ import os
 import json 
 from dotenv import load_dotenv
 from rulebuilder.echo_msg import echo_msg
-from rulebuilder.read_a_rule import read_a_rule
+from rulebuilder.read_fn_rule import read_fn_rule
 from rulebuilder.get_db_cfg import get_db_cfg
 from azure.cosmos.exceptions import CosmosResourceNotFoundError
 
@@ -79,7 +79,7 @@ def publish_a_rule(rule_id = None, doc_id:str=None, rule_dir:str=None,
     v_stp = 2.0 
     v_msg = "Get json document based on rule_id or doc_id..."
     echo_msg(v_prg, v_stp, v_msg, 3)
-    r_json = read_a_rule(rule_id=rule_id, doc_id=doc_id, 
+    r_json = read_fn_rule(rule_id=rule_id, doc_id=doc_id, 
                          rule_dir=rule_dir)
 
     # 3.0 publish the documnet 

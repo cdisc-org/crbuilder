@@ -3,6 +3,7 @@
 # History: MM/DD/YYYY (developer) - description
 #   04/06/2023 (htu) - ported from proc_sdtm_rules as proc_rules module
 #   04/07/2023 (htu) - added r_standard and db_cfg 
+#   04/08/2023 (htu) - added log_cfg 
 #  
 
 import os
@@ -30,7 +31,8 @@ def proc_rules(r_standard,
                 wrt2log: int = 0, pub2db: int = 0,
                 get_db_rule: int = 0,
                 db_name:str=None, ct_name:str=None,
-                db_cfg = None  
+                db_cfg = None,
+                log_cfg = None  
                 ) -> None:
     """
     Process all rule definitions in `df_data`, and output a YAML and JSON
@@ -88,19 +90,26 @@ def proc_rules(r_standard,
     v_prg = __name__ 
     st_all = dt.datetime.now()
     load_dotenv()
-    now_utc = dt.datetime.now(dt.timezone.utc)
+    # now_utc = dt.datetime.now(dt.timezone.utc)
+    now_utc = dt.datetime.now()
     w2log = os.getenv("write2log")
-    log_dir = os.getenv("log_dir")
-    job_id = now_utc.strftime("%Y%m%d_%H%M%S")
-    s_dir  = now_utc.strftime("/%Y/%m/")
-    rst_fn = log_dir + s_dir + f"job-{job_id}-proc.xlsx"
+    # log_dir = os.getenv("log_dir")
+    # job_id  = os.getenv("job_id")
+    # s_dir = os.getenv("s_dir")
     w2log = 0 if w2log is None else int(w2log)
     if w2log > wrt2log:
         wrt2log = w2log 
     # 0. set up log first 
-    log_cfg = create_log_dir(job_id=job_id, fn_root="crb", fn_sufix="xlsx", 
-                             wrt2log=wrt2log)
+    if log_cfg is None: 
+        log_cfg = create_log_dir(wrt2log=wrt2log)
+    s_dir = log_cfg["s_dir"]
     log_fdir = log_cfg["log_fdir"]
+    job_id = log_cfg["job_id"]
+    log_dir = log_cfg["log_dir"]
+    if job_id is None:
+        job_id = now_utc.strftime("J%H%M%S")
+    rst_fn = log_dir + s_dir + f"/job-{job_id}-proc.xlsx"
+
 
     # 1. get inputs
     # -----------------------------------------------------------------------
@@ -248,18 +257,17 @@ def proc_rules(r_standard,
     ipt_msg += f" . Get DB Rule ({get_db_rule}): {db_name}.{ct_name}"
  
     rows = []
-    fn_sufix = now_utc.strftime("%dT%H%M%S.txt")
     num_grps = grouped_data.ngroups
     i_grp = 0
     v_stp = 3.1 
     for rule_id, group in grouped_data:
         i_grp += 1 
         st_row = dt.datetime.now()
-        log_fn = f"{log_fdir}/{rule_id}-{fn_sufix}" 
+        log_fn = f"{log_fdir}/{rule_id}-{job_id}.txt" 
         os.environ["log_fn"] = log_fn
         v_msg = f"  {i_grp}/{num_grps}: Rule ID - {rule_id}..."
-        echo_msg(v_prg, v_stp, v_msg, 2)
-        echo_msg(v_prg, v_stp, ipt_msg,3)
+        echo_msg(v_prg, v_stp, v_msg, 2, i=i_grp, n=num_grps)
+        echo_msg(v_prg, v_stp, ipt_msg,3 )
 
         # if rule_id not in rule_ids: continue 
         num_records = group.shape[0]

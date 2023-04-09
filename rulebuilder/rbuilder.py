@@ -9,14 +9,17 @@
 import os
 import re 
 # from abc import ABC, abstractmethod
-from abc import ABC
 import pickle 
 import pandas as pd 
+import datetime as dt
 import ruamel.yaml as yaml
+from abc import ABC
 from dotenv import load_dotenv
 from rulebuilder.echo_msg import echo_msg
 from rulebuilder.proc_rules import proc_rules
-from rulebuilder.proc_each_sdtm_rule import proc_each_sdtm_rule
+from rulebuilder.get_doc_stats import get_doc_stats
+from rulebuilder.proc_each_yaml import proc_each_yaml
+from rulebuilder.create_log_dir import create_log_dir
 
 class RuleBuilder(ABC):
     def __init__(self, 
@@ -48,22 +51,26 @@ class RuleBuilder(ABC):
                           "rule_sheet": 'ADaM Conformance Rules v4.0'},
 
         } 
-        self.rule_files = rule_files 
         v_prg = __name__ + ".init"
         v_stp = 1.0
+        v_msg = "Initializing..."
+        echo_msg(v_prg, v_stp,v_msg, 1)
+
+        v_stp = 1.1
+        self.rule_files = rule_files 
+        log_cfg = create_log_dir()
+        r_dir = log_cfg["r_dir"]
         if r_standard is None:
-            v_stp = 1.1
             v_msg = "Standard name is not provided."
             echo_msg(v_prg, v_stp, v_msg, 0)
             return 
         r_std = r_standard.upper()
         self.r_standard = r_std
+        self.log_cfg = log_cfg
         v_msg = f"Initializing rule builder for {r_std}..."
-        echo_msg(v_prg, v_stp, v_msg, 1)
+        echo_msg(v_prg, v_stp, v_msg, 2)
 
         v_stp = 1.2 
-        load_dotenv()
-        r_dir = os.getenv("r_dir") if r_dir is None else r_dir
         self.r_dir = r_dir
         self.sheet_name = rule_files.get(r_std,{}).get("rule_sheet")
         self.fn_xlsx = rule_files.get(r_std, {}).get("file_name")
@@ -88,7 +95,8 @@ class RuleBuilder(ABC):
   
     def read_rule_definitions (self):
         """
-        Read the rule definitions for the specified standard from a pickled file, a YAML file, or the original Excel file.
+        Read the rule definitions for the specified standard from a pickled file, 
+        a YAML file, or the original Excel file.
 
         Returns:
             A pandas DataFrame containing the rule definitions.
@@ -180,11 +188,14 @@ class RuleBuilder(ABC):
         """
         df_data = self.rule_data
         rule_data = df_data[df_data["Rule ID"] == rule_id]
-        num_of_published = 0
-        a_json = proc_each_sdtm_rule(rule_id=rule_id,
+        a_json = proc_each_yaml(rule_id=rule_id,
             rule_data=rule_data, rule_tmp = self.rule_obj, 
-            in_rule_folder = self.existing_rule_dir, cnt_published = num_of_published)
+            rule_dir = self.existing_rule_dir,get_db_rule=1)
         return a_json 
+    
+    def get_doc_stats (self, db_name:str=None, ct_name:str=None):
+        get_doc_stats(db = db_name, ct = ct_name, wrt2file=1)
+
 
     def process(self, r_standard: str = None, 
                 r_ids=None, s_version: list = [],
@@ -251,7 +262,8 @@ class RuleBuilder(ABC):
                     wrt2log=wrt2log, 
                     pub2db=pub2db,
                     get_db_rule=get_db_rule,
-                    db_name=db_name, ct_name=ct_name
+                    db_name=db_name, ct_name=ct_name,
+                    log_cfg=self.log_cfg
                     )
 
 

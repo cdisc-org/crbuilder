@@ -5,6 +5,10 @@
 # Examples:
 # python rulebuilder.py process --r_ids none  --pub2db 1
 # python rulebuilder.py process --r_ids all  --pub2db 1
+# python rulebuilder.py process --r_ids "CG0001,    CG0002, cg0015" --pub2db 1
+# python rulebuilder.py process --s_domain "AE,DM" --pub2db 1
+# python rulebuilder.py process --s_version "3.4" --pub2db 1
+# python rulebuilder.py process --s_class "EVT"  --pub2db 1
 
 import click
 from rulebuilder.rbuilder import RuleBuilder
@@ -38,6 +42,16 @@ def build_rule(rule_id):
 
 
 @cli.command()
+@click.option('--db_name', type=str, help='Name of database to query.')
+@click.option('--ct_name', type=str, help='Name of container to query.')
+@click.option('--write_file', type=bool, default=True, help='Whether or not to write output to file.')
+def get_doc_statistics(db_name, ct_name, write_file):
+    rb = RuleBuilder()
+    w2f = 1 if write_file else 0 
+    rb.get_doc_stats(db_name, ct_name, wrt2file=w2f)
+
+
+@cli.command()
 @click.option('--r_standard', default='SDTM_V2_0', help='The name of the standard for which the rule definitions are being processed.')
 @click.option('--r_ids', default=None, help='A list of rule IDs to include.')
 @click.option('--s_version', default=None, help='A list of versions to include.')
@@ -53,8 +67,11 @@ def process(r_standard:str=None, r_ids:str=None, s_version:str=None,
             wrt2log:int=1, pub2db:int=1, 
             get_db_rule:int=0, db_name:str=None, ct_name:str=None):
     rb = RuleBuilder()
-    if r_ids is None or r_ids.upper == "NONE":
-        v_ids = ["XXXX"]
+    if r_ids is None:
+        if s_version is None and s_class is None and s_domain is None: 
+            v_ids = ["XXXX"]
+        else: 
+            v_ids = []
     elif r_ids.upper() == "ALL":
         v_ids = []
     else: 
