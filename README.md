@@ -5,7 +5,7 @@ RuleBuilder is a Python package for processing CDISC conformance rules. It
 provides a `RuleBuilder` class that can be used to read rule definitions from 
 an Excel file or a YAML file, and then process those rules by applying them to 
 datasets. Here is a list of steps that it performs:
-* Read rule definition. Here is a list of avaialbe rule definitions:
+* Read rule definition. Here is a list of available rule definitions:
     - FDA_VR1_6: FDA Validator Rules v1.6 December 2022_0
     - SDTM_V2_0: SDTM and SDTMIG Conformance Rules_v2.0
     - SEND_V4_0: SEND Conformance Rules v4.0
@@ -13,7 +13,7 @@ datasets. Here is a list of steps that it performs:
 * Get rule statistics if `get_db_rule` or `pub2db` is enabled.
 * Back up current rule(s) 
 * Get existing rule if the rule exists in the database or in local rule folder
-* Check rule citation agaist rule definition 
+* Check rule citation against rule definition 
 * Add missing citations to the rule
 * Write the rule to target folders in JSON and YAML formats
 * Publish the rule to the database if `pub2db` is enabled
@@ -142,17 +142,17 @@ This project is licensed under the MIT License - see the LICENSE.md file for det
 * Added report capability for all the rules processed
 * Added reading from and publishing to the database 
 * Added backup capability
-* Added de-dulication capability 
+* Added de-duplication capability 
 
 ### Version 0.2.0
 
 * Added mutiple rule processing capability
 * Added error handling and message processing 
 * Added processing status report 
-* Fixed a rule bugs  
+* Fixed some rule bugs  
 
 ### Version 0.1.0
-* Set up procession framework
+* Set up process framework
 * Read rules from a local rule folder
 * Produced single rule and pass rule validation 
 
