@@ -27,10 +27,29 @@ pip install crbuilder
 
 ## Usage
 
-The `RuleBuilder` class can be used to process conformance rules in three main 
-steps: 
+The `RuleBuilder` class can be used to process conformance rules with many commands and options. 
+It can perform the following tasks: 
+
 * initialize the rule builder, 
+* get statistics for documents in a container
 * build a single rule, or process a list of rules or all rules.
+
+Here is the command line usage:
+```python
+Usage: rulebuilder.py [OPTIONS] COMMAND [ARGS]...
+```
+This produce a list of available commands:
+```java
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  build-rule
+  get-doc-statistics
+  initialize
+  process
+```
+
 
 ### Initialize
 
@@ -72,6 +91,7 @@ The `process` command is used to process all rules. It takes the following
 command-line options:
 
 ```java
+--r_standard: The name of the standard for which the rule definitions are being processed (default='SDTM_V2_0')
 --r_ids: a list of rule IDs to include (default: None)
 --s_version: a list of versions to include (default: [])
 --s_class: a list of classes to include (default: [])
@@ -86,11 +106,17 @@ command-line options:
 To process all rules with the `RuleBuilder` class, run the following command:
 
 ```java
-rulebuilder process
+python rulebuilder.py process --r_ids all  --pub2db 1
 ```
 
 You can specify any of the command-line options described above to customize the 
-processing of the rules.
+processing of the rules. Here are a few examples: 
+``` java
+python rulebuilder.py process --r_ids "CG0001,    CG0002, cg0015" --pub2db 1
+python rulebuilder.py process --s_domain "AE,DM" --pub2db 1
+python rulebuilder.py process --s_version "3.4" --pub2db 1
+python rulebuilder.py process --s_class "EVT"  --pub2db 1
+```
 
 ## License
 
