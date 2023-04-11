@@ -9,6 +9,7 @@
 # python rulebuilder.py process --s_domain "AE,DM" --pub2db 1
 # python rulebuilder.py process --s_version "3.4" --pub2db 1
 # python rulebuilder.py process --s_class "EVT"  --pub2db 1
+# python rulebuilder.py process --r_standard FDA_VR1_6 --r_ids CT2001
 
 import click
 from rulebuilder.rbuilder import RuleBuilder
@@ -66,7 +67,7 @@ def process(r_standard:str=None, r_ids:str=None, s_version:str=None,
             s_class:str=None, s_domain:str=None, 
             wrt2log:int=1, pub2db:int=1, 
             get_db_rule:int=0, db_name:str=None, ct_name:str=None):
-    rb = RuleBuilder()
+    rb = RuleBuilder(r_standard=r_standard)
     if r_ids is None:
         if s_version is None and s_class is None and s_domain is None: 
             v_ids = ["XXXX"]

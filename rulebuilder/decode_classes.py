@@ -35,7 +35,7 @@ def decode_classes(df_data, df_map = None):
     v_pat = re.compile(
         "NOT\s*\(([\w ,]+)\)", re.IGNORECASE) if not df_map.get("v_pat") else df_map.get("v_pat")
 
-    # 2. define sub functiokns 
+    # 2. define sub functions 
     # print(f"FF: {fa_class['FND:FA']}")
     def proc_ap_fa (i,v_class, v_domain):
         r_bool  = False

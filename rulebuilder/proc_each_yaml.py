@@ -6,6 +6,7 @@
 #     1. added rule_dir, get_db_rule, db_name, ct_name, and r_ids 
 #     2. updated calling to get_existing_rule parameters in Step 1.3
 #   04/07/2023 (htu) - used echo_msg to display dict datasets 
+#   04/10/2023 (htu) - added r_std input parameter 
 #    
 
 import os 
@@ -37,7 +38,7 @@ from rulebuilder.get_yaml_authorities import get_yaml_authorities
 def proc_each_yaml (rule_id:str=None,rule_data = None, rule_obj = None,
                     rule_dir:str =None, r_ids = None, 
                     get_db_rule:int = 0,
-                    db_name: str = None, ct_name:str=None):
+                    db_name: str = None, ct_name:str=None, r_std:str=None):
     v_prg = __name__
     
     v_stp = 1.0
@@ -46,6 +47,9 @@ def proc_each_yaml (rule_id:str=None,rule_data = None, rule_obj = None,
     yaml_file = os.getenv("yaml_file")
     if rule_dir is None: 
         rule_dir = os.getenv("existing_rule_dir")
+    
+    r_std = os.getenv("r_standard") if r_std is None else r_std
+    r_std = r_std.upper()
 
     # 1.1 check parameters 
     v_stp = 1.1
@@ -142,7 +146,7 @@ def proc_each_yaml (rule_id:str=None,rule_data = None, rule_obj = None,
 
     # yt = ry.dump_all(y2, Dumper=ry.RoundTripDumper)
 
-    y_autho = get_yaml_authorities(rule_data,y2)
+    y_autho = get_yaml_authorities(rule_data,y2, r_std=r_std)
     v_msg = "---------- Rule Authorities (Y_AUTHO) ----------"
     echo_msg(v_prg, v_stp, v_msg, 9)
     echo_msg(v_prg, v_stp, y_autho, 9)
@@ -190,7 +194,7 @@ def proc_each_yaml (rule_id:str=None,rule_data = None, rule_obj = None,
     # rule_obj["json"]["Rule_Type"] = get_rtype(
     #     rule_data, exist_rule_data=rule_obj)
     y2["Rule_Type"] = get_rtype(
-         rule_data, exist_rule_data=rule_obj)
+         rule_data, exist_rule_data=rule_obj,r_std=r_std)
 
     # # get json Sensitivity
     # rule_obj["json"]["Sensitivity"] = get_sensitivity(

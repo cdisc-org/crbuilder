@@ -7,6 +7,7 @@
 #  
 
 import os
+import re 
 import sys 
 import json 
 import pandas as pd
@@ -22,6 +23,7 @@ from rulebuilder.publish_a_rule import publish_a_rule
 from rulebuilder.build_rule_yaml import build_rule_yaml
 from rulebuilder.output_rule2file import output_rule2file
 from rulebuilder.get_existing_rule import get_existing_rule
+from rulebuilder.get_rule_constants import get_rule_constants
 
 def proc_rules(r_standard,
                df_data=None, in_rule_folder:str=None, 
@@ -90,6 +92,10 @@ def proc_rules(r_standard,
     v_prg = __name__ 
     st_all = dt.datetime.now()
     load_dotenv()
+
+    r_std = os.getenv("r_standard") if r_standard is None else r_standard
+    r_std = r_std.upper()
+
     # now_utc = dt.datetime.now(dt.timezone.utc)
     now_utc = dt.datetime.now()
     w2log = os.getenv("write2log")
@@ -244,7 +250,7 @@ def proc_rules(r_standard,
                                    "publish_status"])
     # capture input parameters
     ipt_msg = f"Input Parameters:\n . Job ID: {job_id}\n"
-    ipt_msg += f" . R_Standard: {r_standard}\n"
+    ipt_msg += f" . R_Standard: {r_std}\n"
     ipt_msg += f" . Rule Data: {num_records_processed}\n"
     ipt_msg += f" . Existing Rule Folder: {in_rule_folder}\n"
     ipt_msg += f" . Output Folder: {out_rule_folder} Sub Dir: {s_dir}\n" 
@@ -260,6 +266,7 @@ def proc_rules(r_standard,
     num_grps = grouped_data.ngroups
     i_grp = 0
     v_stp = 3.1 
+    v_re = r'([^\d]+)(\d.*)'
     for rule_id, group in grouped_data:
         i_grp += 1 
         st_row = dt.datetime.now()
@@ -331,22 +338,48 @@ def proc_rules(r_standard,
         row.update({"sensitivity": a.get(
             "json", {}).get("Sensitivity")})
 
-        row.update(
-            {"version": rule_data["SDTMIG Version"].str.cat(sep="; ")})
+        v_r_v1 = None 
+        v_r_v2 = None
+        v_r_d1 = None
+        v_r_s1 = None
+        v_c = None
+        v_d = None 
 
-        v_classes = list(
-            set([c for classes in rule_data['Class'] for c in classes]))
-        v_c = ", ".join(v_classes)
+        if r_std in ("SDTM_V2_0"):
+            v_r_v1 = rule_data["SDTMIG Version"].str.cat(sep="; ")
+            v_classes = list(
+                set([c for classes in rule_data['Class'] for c in classes]))
+            v_c = ", ".join(v_classes)
+            v_doms = list(
+                set([d for doms in rule_data['Domain'] for d in doms]))
+            v_d = ", ".join(v_doms)
+            v_r_v2 = rule_data["Variable"].str.cat(sep = "; ")
+            v_r_d1 = rule_data["Document"].str.cat(sep = "; ")
+            v_r_s1 = rule_data["Section"].str.cat(sep = "; ")
+        elif r_std in ("FDA_VR1_6"):
+            r_cst = get_rule_constants(r_std)
+            v_vs = r_cst.get("VS")
+            # print(f"V_Vs ------------- : {v_vs}")
+            v_r_v1 = None
+            for j in v_vs:
+                v_ig_version = re.sub(r'([G|R|T])(\d)', r'\1 \2', j)
+                if v_r_v1 is None:
+                    v_r_v1 = v_ig_version
+                else:
+                    if v_ig_version is not None:
+                        v_r_v1 += "," + v_ig_version
+            v_c = a.get("json",{}).get("Scope",{}).get(
+                "Classes",{}).get("Include")
+            v_d = a.get("json", {}).get("Scope", {}).get(
+                "Domains", {}).get("Include")
+ 
+        # end of if r_std in ("SDTM_V2_0")
+        row.update({"version": v_r_v1})
         row.update({"class": v_c  })
-
-        v_doms = list(
-            set([d for doms in rule_data['Domain'] for d in doms]))
-        v_d = ", ".join(v_doms)
         row.update({"domain": v_d })
-
-        row.update({"variable": rule_data["Variable"].str.cat(sep = "; ")})
-        row.update({"document": rule_data["Document"].str.cat(sep = "; ")})
-        row.update({"section": rule_data["Section"].str.cat(sep = "; ")})
+        row.update({"variable": v_r_v2})
+        row.update({"document": v_r_d1})
+        row.update({"section": v_r_s1})
         # Append row to list of rows
 
         # 3.6 build yaml content

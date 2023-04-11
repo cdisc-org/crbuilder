@@ -16,7 +16,7 @@ import sys
 from datetime import datetime, timezone
 import uuid
 import json 
-from ruamel.yaml import YAML, parser, scanner
+from ruamel.yaml import YAML
 # from transformer.transformer import Transformer
 from dotenv import load_dotenv
 from rulebuilder.echo_msg import echo_msg
@@ -47,6 +47,8 @@ def get_existing_rule(rule_id, in_rule_folder,
     v_stp = 1.0
     v_msg = "Checking input parameters..."
     echo_msg(v_prg, v_stp, v_msg, 2)
+    if in_rule_folder is None:
+        in_rule_folder = os.getenv("existing_rule_dir")
 
     # 2 get json data either from db or rule folder
     v_stp = 2.0
@@ -64,7 +66,10 @@ def get_existing_rule(rule_id, in_rule_folder,
         v_stp = 2.12
         v_status = json_data.get(
             "json", {}).get("Core", {}).get("Status")
-        ofn = in_rule_folder + "/" + rule_id + "-" + v_status + ".json"
+        if v_status is None:
+            ofn = in_rule_folder + "/" + rule_id + "-new.json"
+        else: 
+            ofn = in_rule_folder + "/" + rule_id + "-" + v_status + ".json"
         v_msg = f"Backing up the rule to {ofn}..."
         echo_msg(v_prg, v_stp, v_msg, 2)
         with open(ofn, 'w') as f:
@@ -139,7 +144,7 @@ def get_existing_rule(rule_id, in_rule_folder,
          
         # r_json["json"] = Transformer.spaces_to_underscores(
         #    safe_load(r_json["content"]))
-
+    
     return r_json 
 
 

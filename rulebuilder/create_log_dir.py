@@ -3,6 +3,7 @@
 # History: MM/DD/YYYY (developer) - description
 #   04/03/2023 (htu) - initial coding by extracting code from proc_sdtm_rules 
 #   04/07/2023 (htu) - used getenv to get job_id and sub_dir
+#   04/10/2023 (htu) - removed some redundant codes 
 #
 
 import os 
@@ -24,7 +25,8 @@ def create_log_dir(log_dir: str = None, job_id: str = None,
     load_dotenv()
     r_dir = os.getenv("r_dir")
     tm = dt.datetime.now()
-    job_id = tm.strftime("J%H%M%S")
+    job_id = os.getenv("job_id") if job_id is None else job_id 
+    job_id = tm.strftime("J%H%M%S") if job_id is None else job_id 
     s_dir = tm.strftime("/%Y/%m/%d")
     sub_dir = f"{s_dir}/{job_id}"
     r_dir = "." if r_dir is None else r_dir
@@ -53,18 +55,8 @@ def create_log_dir(log_dir: str = None, job_id: str = None,
         echo_msg(v_prg, v_stp, v_msg, 0)
         return r_cfg 
     r_cfg["log_dir"] = log_dir
-    
-    if job_id is None: 
-        job_id = os.getenv("job_id")
-        if job_id is None: 
-            job_id = tm.strftime("%Y%m%d_%H%M%S")
-        r_cfg["job_id"] = job_id
-
-    if sub_dir is None:
-        sub_dir = tm.strftime("/%Y/%m/%d") + job_id
-        r_cfg["sub_dir"] = sub_dir
-    
-    # get enviroment setting for write2log 
+        
+    # get environment setting for write2log 
     w2log = 0 if w2log is None else int(w2log)
     r_cfg["wrt2log"] = wrt2log 
     # we use the input from this as higher priority
@@ -108,14 +100,14 @@ if __name__ == "__main__":
     # Test case 1: Use Rule ID
     fdir = log_dir + tm.strftime("/%Y/%m/%Y%m%d_%H%M%S")
     d1 = create_log_dir()
-    print(f"File Paht: {d1['fn_path']}")
+    print(f"File Path: {d1['fn_path']}")
     assert fdir == d1["log_fdir"] 
 
     # Test case 2: Use Doc ID
     j_id = "a1234"
     fdir = log_dir + tm.strftime("/%Y/%m/") + j_id 
     d2 = create_log_dir(job_id = j_id )
-    print(f"File Paht: {d2['fn_path']}") 
+    print(f"File Path: {d2['fn_path']}") 
     assert fdir == d2["log_fdir"] 
 
     print("All tests run successfully")

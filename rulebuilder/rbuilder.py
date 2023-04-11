@@ -4,6 +4,7 @@
 #   03/23/2023 (htu) - initial coding
 #   04/06/2023 (htu) - added r_standard, rule_files and read_rule_definitions 
 #   04/07/2023 (htu) - added r_standard in process method 
+#   04/10/2023 (htu) - added r_standard envrionemnt variable in __init__
 #   
 
 import os
@@ -20,6 +21,7 @@ from rulebuilder.proc_rules import proc_rules
 from rulebuilder.get_doc_stats import get_doc_stats
 from rulebuilder.proc_each_yaml import proc_each_yaml
 from rulebuilder.create_log_dir import create_log_dir
+from rulebuilder.read_rule_definitions import read_rule_definitions
 
 class RuleBuilder(ABC):
     def __init__(self, 
@@ -67,28 +69,30 @@ class RuleBuilder(ABC):
         r_std = r_standard.upper()
         self.r_standard = r_std
         self.log_cfg = log_cfg
+
+        os.environ["r_standard"] = r_standard
         v_msg = f"Initializing rule builder for {r_std}..."
         echo_msg(v_prg, v_stp, v_msg, 2)
 
         v_stp = 1.2 
         self.r_dir = r_dir
-        self.sheet_name = rule_files.get(r_std,{}).get("rule_sheet")
-        self.fn_xlsx = rule_files.get(r_std, {}).get("file_name")
-        self.fn_yaml = r_std.lower() + ".yaml"
-        self.fn_pick = r_std.lower() + ".pick"
-        self.i_fn = self.fn_xlsx                            # keep for compatability
-        self.fp_xlsx = r_dir + "/data/source/xlsx/" + self.fn_xlsx
-        self.fp_yaml = r_dir + "/data/source/yaml/" + self.fn_yaml
-        self.fp_pick = r_dir + "/data/source/pick/" + self.fn_pick
+        # self.sheet_name = rule_files.get(r_std,{}).get("rule_sheet")
+        # self.fn_xlsx = rule_files.get(r_std, {}).get("file_name")
+        # self.fn_yaml = r_std.lower() + ".yaml"
+        # self.fn_pick = r_std.lower() + ".pick"
+        # self.i_fn = self.fn_xlsx                            # keep for compatability
+        # self.fp_xlsx = r_dir + "/data/source/xlsx/" + self.fn_xlsx
+        # self.fp_yaml = r_dir + "/data/source/yaml/" + self.fn_yaml
+        # self.fp_pick = r_dir + "/data/source/pick/" + self.fn_pick
 
         self.core_base_url = core_base_url
         self.creator_url = creator_url
 
-        self.yaml_file = r_dir + "/data/target/" + i_fn 
+        # self.yaml_file = r_dir + "/data/target/" + i_fn 
         self.output_dir = r_dir + "/data/output"
         self.existing_rule_dir = r_dir + "/data/output/orig_rules"
-        self.stat_cnts = {"total": 0, "renamed": 0, "skipped": 0, "dupped": 0, 
-                          "ruleid_used": 0, "coreid_used": 0}
+        # self.stat_cnts = {"total": 0, "renamed": 0, "skipped": 0, "dupped": 0, 
+        #                   "ruleid_used": 0, "coreid_used": 0}
         v_stp = 1.3 
         # self.rule_data = read_rules(self.yaml_file)
         self.rule_data = self.read_rule_definitions()
@@ -105,75 +109,13 @@ class RuleBuilder(ABC):
         v_stp = 1.0
         v_msg = f"Reading rule definition for {self.r_standard}..."
         echo_msg(v_prg, v_stp, v_msg, 1)
-        # 1.1 read from a pickled file 
-        fn = self.fp_pick
-        v_stp = 1.1
-        if os.path.isfile(fn):
-            v_msg = f" . from {fn}..."
-            echo_msg(v_prg, v_stp, v_msg, 2)
-            with open(fn, 'rb') as f:
-                # Deserialize the object from the file
-                data = pickle.load(f)
-            # Create a DataFrame from the loaded data
-            df = pd.DataFrame(data)
-            v_msg = f" . The dataset has {df.shape[0]} records. "
-            echo_msg(v_prg, v_stp, v_msg, 2)
-            return df 
-        else:
-            v_msg = f" . Could not find pickled file: {fn}."
-        echo_msg(v_prg, v_stp, v_msg, 2)
+        v_std = self.r_standard
+        v_ifn = self.rule_files.get(v_std, {}).get("file_name")
+        v_sheet = self.rule_files.get(v_std, {}).get("rule_sheet")
 
-        
-        # 1.2 read from a yaml file 
-        fn = self.fp_yaml 
-        v_stp = 1.2
-        if os.path.isfile(fn):
-            v_msg = f" . from {fn}..."
-            echo_msg(v_prg, v_stp, v_msg, 2)
-            with open(fn, "r") as f:
-                data = yaml.safe_load(f)
-            # Create DataFrame from YAML data
-            df = pd.DataFrame(data)
-            v_msg = f" . The dataset has {df.shape[0]} records. "
-            echo_msg(v_prg, v_stp, v_msg, 2)
-            return df
-        else:
-            v_msg = f" . Could not find yaml file: {fn}."
-        echo_msg(v_prg, v_stp, v_msg, 2)
-        
-        # 1.3 read from the original xlsx file 
-        fn = self.fp_xlsx
-        v_stp = 1.3
-        if os.path.isfile(fn):
-            v_msg = f" . from {fn}..."
-            echo_msg(v_prg, v_stp, v_msg, 2)
+        df = read_rule_definitions(r_std=v_std,r_dir=self.r_dir,r_file=v_ifn,r_sheet=v_sheet)
 
-            s_name = self.sheet_name
-            if fn.startswith('FDA'):
-                df = pd.read_excel(fn, sheet_name=s_name,
-                           header=1, engine='openpyxl')
-            else:
-                df = pd.read_excel(fn, sheet_name=s_name, engine='openpyxl')
-            # remove newline breaks in column names
-            df.columns = df.columns.str.replace('\n', '')
-            df.columns = df.columns.str.lstrip()           # remove leading spaces
-            df.columns = df.columns.str.rstrip()           # remove trailing spaces
-            # remove newline breaks in data
-            df = df.fillna('')                              # fill na with ''
-            df = df.applymap(lambda x: re.sub(r'\n\n+', '\n', str(x)))
-
-            # Convert the dataframe to a dictionary
-            df = df.to_dict(orient='records')
-            v_msg = f" . The dataset has {df.shape[0]} records. "
-            echo_msg(v_prg, v_stp, v_msg, 2)
-            return df
-        else:
-            v_msg = f" . Could not find xlsx file: {fn}."
-        echo_msg(v_prg, v_stp, v_msg, 2)
-        
-        v_msg = "We did not find any rule definition file to be read."
-        echo_msg(v_prg, v_stp, v_msg, 0)
-        return pd.DataFrame()
+        return df
 
 
     def build_a_rule(self, rule_id):
@@ -224,6 +166,8 @@ class RuleBuilder(ABC):
         v_msg = "Processing CORE rule definitions..."
         if r_standard is None:
             r_standard = self.r_standard
+        else:
+            self.__init__(r_standard=r_standard)
         if r_standard is None:
             v_stp = 1.1
             v_msg = "No rule standard is provided."
@@ -287,5 +231,5 @@ if __name__ == "__main__":
     # rb.process(r_ids=["CG0156"])
     # rb.process(r_ids=["CG0165","CG0319"])  # these two do not exist
     # rb.process(r_ids=[])    # to process all 
-    rb.process(r_ids=["CG0006"])
+    rb.process(r_standard="FDA_VR1_6", r_ids=["CT2001"])
 # End of File

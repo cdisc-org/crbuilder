@@ -21,7 +21,7 @@ from rulebuilder.get_desc import get_desc
 from rulebuilder.get_jmsg import get_jmsg
 from rulebuilder.get_rtype import get_rtype
 from rulebuilder.get_sensitivity import get_sensitivity
-from rulebuilder.get_authorities import get_authorities
+from baks.rulebuilder.get_authorities import get_authorities
 from rulebuilder.get_scope import get_scope
 from rulebuilder.get_executability import get_executability
 from rulebuilder.get_check import get_check

@@ -3,6 +3,7 @@
 # History: MM/DD/YYYY (developer) - description
 #   03/21/2023 (htu) - extracted out from get_desc 
 #   03/22/2023 (htu) - added exist_rule_data 
+#   04/10/2023 (htu) - added r_std 
 #
 
 import pandas as pd
@@ -11,7 +12,7 @@ from rulebuilder.echo_msg import echo_msg
 from rulebuilder.replace_operator import replace_operator
 
 
-def get_jmsg(rule_data, exist_rule_data: dict = {}):
+def get_jmsg(rule_data, exist_rule_data: dict = {}, r_std:str=None):
     """
     Returns a JSON message string based on the given rule data.
 
@@ -35,7 +36,11 @@ def get_jmsg(rule_data, exist_rule_data: dict = {}):
     v_msg = "Getting Message for json.Message..."
     echo_msg(v_prg, v_stp, v_msg, 3)
     r_str = exist_rule_data.get("json", {}).get("Message")
-    if r_str is None: 
+    if r_str is not None:
+        return r_str
+    
+    r_std = os.getenv("r_standard") if r_std is None else r_std
+    if r_std.upper() == "SDTM_V2_0":
         r_condition = rule_data.iloc[0]["Condition"]
         r_rule = rule_data.iloc[0]["Rule"]
         # Debugging print statement
@@ -52,6 +57,11 @@ def get_jmsg(rule_data, exist_rule_data: dict = {}):
         v_stp = 1.4
         v_msg = " . r_desc3: " + str(r_str)        # Debugging print statement
         echo_msg(v_prg, v_stp, v_msg, 4)
+    elif r_std.upper() == "FDA_VR1_6":
+        r_str = rule_data.iloc[0]["FDA Validator Rule Message"]
+    else:
+        r_str = ""
+
     return r_str
 
 
