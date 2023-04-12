@@ -1,10 +1,11 @@
 # Purpose: Get json.Scope for a rule 
 # -----------------------------------------------------------------------------
 # History: MM/DD/YYYY (developer) - description
-#   03/14/2023 (htu) - ported from proc_rules_sdtm and modulized as get_scope
+#   03/14/2023 (htu) - ported from proc_rules_sdtm and modularized as get_scope
 #   03/22/2023 (htu) - added exist_rule_data, docstring and test cases
 #   03/24/2023 (htu) - added set_scope sub function
 #   04/10/2023 (htu) - added r_std input parameter 
+#   04/12/2023 (htu) - added r_cst to get rule classes from get_rule_constants 
 #    
 
 
@@ -14,9 +15,9 @@ from itertools import chain
 from rulebuilder.echo_msg import echo_msg
 from rulebuilder.read_rule_definitions import read_rule_definitions
 from rulebuilder.decode_classes import decode_classes
-from rulebuilder.get_existing_rule import get_existing_rule
+from rulebuilder.get_rule_constants import get_rule_constants
 
-def get_scope(rule_data, exist_rule_data: dict = {}, r_std:str=None):
+def get_scope(rule_data, exist_rule_data: dict = {}, r_std:str=None, r_cst = None):
     v_prg = __name__
     v_stp = 1.0
     v_msg = "Getting Scope..."
@@ -28,6 +29,10 @@ def get_scope(rule_data, exist_rule_data: dict = {}, r_std:str=None):
 
     r_std = os.getenv("r_standard") if r_std is None else r_std
     r_std = r_std.upper()
+
+    if r_cst is None:
+        r_cst = get_rule_constants(r_std=r_std)
+    v_cs = r_cst.get("Classes")
 
     r_json = {
         "Classes": {},
@@ -60,7 +65,7 @@ def get_scope(rule_data, exist_rule_data: dict = {}, r_std:str=None):
         v_stp = 2.2
         echo_msg(v_prg, v_stp, v_msg, 3) 
 
-        v_cs = ["INTERVENTIONS", "EVENTS", "FINDINGS", "FINDINGS ABOUT"]
+        # v_cs = ["INTERVENTIONS", "EVENTS", "FINDINGS", "FINDINGS ABOUT"]
         # v_str = "INTERVENTIONS, EVENTS, FINDINGS, FINDINGS ABOUT, SE, SM, SV, INTERVENTIONS, EVENTS, FINDINGS, FINDINGS ABOUT,CV, EG, FT, LB, MK, NV, OE, PC, PP, RE, UR, AE, CE, MH"
         v_str = df_rules.iloc[0]["Domains"]
         # Split v_str into a list of words

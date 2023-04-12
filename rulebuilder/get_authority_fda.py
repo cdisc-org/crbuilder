@@ -2,7 +2,7 @@
 # -----------------------------------------------------------------------------
 # History: MM/DD/YYYY (developer) - description
 #   04/10/2023 (htu) - initial coding based on get_authority_sdtm module
-#    
+#   04/12/2023 (htu) - we force the change for existing standards at step 2.53
 
 import os
 import re
@@ -161,7 +161,9 @@ def get_authority_fda(rule_data, rule_obj=None, r_std: str = None, rule_constant
                             if v1_id == v2_id:
                                 v_msg = f"   Standard Versions matched." 
                                 echo_msg(v_prg, v_stp, v_msg, 4)
-                                r_a_std = standard
+                                v_stp = 2.53
+                                # 04/12/2023: comment out so that we will force the change
+                                # r_a_std = standard
                                 d2_ig_version = None
                                 break
 

@@ -49,7 +49,7 @@ def get_desc(rule_data, exist_rule_data: dict = {}, r_std:str=None):
     if v_desc is not None:
         return v_desc
     
-    print(f"RuleData: {rule_data}")
+    # print(f"RuleData: {rule_data}")
 
     v_stp = 2.0
     r_std = os.getenv("r_standard") if r_std is None else r_std
@@ -62,11 +62,14 @@ def get_desc(rule_data, exist_rule_data: dict = {}, r_std:str=None):
         v_desc = "Trigger error when " + jmsg
         # print(f"desc: {desc}")  # Debugging print statement
         # Disable the description for SDTM 
-        v_desc = None 
+        v_desc = "" 
     elif r_std == "FDA_VR1_6":
         v_stp = 2.2
         # print(f"VDesc: {rule_data.iloc[0]}")
         v_desc = rule_data.iloc[0]["FDA Validator Rule Description"]
+
+    echo_msg(v_prg, v_stp, v_msg, 3)
+    echo_msg(v_prg, v_stp, v_desc, 9)
         
     return v_desc
 

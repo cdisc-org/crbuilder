@@ -57,7 +57,7 @@ def get_authority_sdtm(rule_data, rule_obj = None, r_std:str=None, rule_constant
         r_cst = get_rule_constants(r_std)
     else:
         r_cst = rule_constants 
-    print(f"Rule Constants: {r_cst}")
+    # v_msg = f"Rule Constants: {r_cst}"
     v_auth = r_cst.get("Authorities")
     v_orig = v_auth.get("Standards.References.Origin")
     v_vers = v_auth.get("Standards.References.Version")

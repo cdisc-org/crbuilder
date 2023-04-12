@@ -10,6 +10,7 @@
 #   04/06/2023 (htu) - commented out "transformer.transformer"
 #   04/07/2023 (htu) - added steps 2.11 and 2.12 to back up the rule read from the DB
 #   04/11/2023 (htu) - added step 2.13
+#   04/12/2023 (htu) - added step 2.14 to backup to YAML file
 #    
 
 import os
@@ -17,6 +18,7 @@ import sys
 from datetime import datetime, timezone
 import uuid
 import json 
+import yaml
 from ruamel.yaml import YAML
 # from transformer.transformer import Transformer
 from dotenv import load_dotenv
@@ -57,7 +59,7 @@ def get_existing_rule(rule_id, in_rule_folder,
     if get_db_rule == 1: 
         v_stp = 2.1
         v_msg = f"Getting rule doc from {db_name}.{ct_name}..."
-        echo_msg(v_prg, v_stp, v_msg, 2)
+        echo_msg(v_prg, v_stp, v_msg, 3)
         json_data = read_db_rule(rule_id=rule_id, db_cfg=db_cfg,r_ids=r_ids,
                                  db_name=db_name,ct_name=ct_name)
         v_stp = 2.11
@@ -65,22 +67,32 @@ def get_existing_rule(rule_id, in_rule_folder,
             v_msg = "Making dir - " + in_rule_folder
             echo_msg(v_prg, v_stp, v_msg, 3)
             os.makedirs(in_rule_folder)
+
         v_stp = 2.12
         doc_id = json_data.get("id")
         v_status = json_data.get(
             "json", {}).get("Core", {}).get("Status")
-        if v_status is None:
-            ofn = in_rule_folder + "/" + rule_id + "-new.json"
-        else: 
-            ofn = in_rule_folder + "/" + rule_id + "-" + v_status + ".json"
-        v_msg = f"Backing up the rule to {ofn}..."
-        echo_msg(v_prg, v_stp, v_msg, 2)
-        with open(ofn, 'w') as f:
+        ofn = f"{rule_id}-new" if v_status is None else f"{rule_id}-{v_status}"
+        fn1 = f"{in_rule_folder}/{ofn}.json"
+        v_msg = f"FN1: Backing up the rule to {fn1}..."
+        echo_msg(v_prg, v_stp, v_msg, 3)
+        with open(fn1, 'w') as f:
             json.dump(json_data, f, indent=4)
+
         v_stp = 2.13
         fn2 = f"{json_rule_dir}/{doc_id}.json"
+        v_msg = f"FN2: Backing up the rule to {fn2}..."
+        echo_msg(v_prg, v_stp, v_msg, 3)
         with open(fn2, 'w') as f:
             json.dump(json_data, f, indent=4)
+
+        v_stp = 2.14
+        fn3 = f"{json_rule_dir}/{doc_id}.yaml"
+        v_msg = f"FN3: Backing up the rule to {fn3}..."
+        echo_msg(v_prg, v_stp, v_msg, 3)
+        yaml_data = yaml.dump(json_data, default_flow_style=False)
+        with open(fn3, 'w') as f:
+            f.write(yaml_data)
     else: 
         v_stp = 2.2
         v_msg = f"Getting rule file from {in_rule_folder}..."

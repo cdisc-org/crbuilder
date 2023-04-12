@@ -2,6 +2,7 @@
 # -----------------------------------------------------------------------------
 # History: MM/DD/YYYY (developer) - description
 #   04/10/2023 (htu) - initial coding
+#   04/12/2023 (htu) - added Classes for FDA_VR1_6
 #
 import os 
 
@@ -25,8 +26,9 @@ def get_rule_constants (r_std:str=None):
         "Executability": "Fully Executable",
         "VS": ["SDTMIG3.1.2", "SDTMIG3.1.3", "SDTMIG3.2", "SDTMIG3.3",
                 "SENDIG3.0", "SENDIG3.1", "SENDIG3.1.1", "SENDIG-AR1.0",
-                "SENDIG-DART1.1"]
-
+                "SENDIG-DART1.1"],
+        "Classes": ["EVENTS", "FINDINGS", "FINDINGS ABOUT", "INTERVENTIONS", 
+                    "RELATIONSHIP", "SPECIAL PURPOSE", "STUDY REFERENCE", "TRIAL DESIGN"]
     },
     "SDTM_V2_0": {
         "Authorities": {
