@@ -37,9 +37,10 @@ def get_jmsg(rule_data, exist_rule_data: dict = {}, r_std:str=None):
     echo_msg(v_prg, v_stp, v_msg, 3)
     r_str = exist_rule_data.get("json", {}).get("Message")
     if r_str is not None:
-        return r_str
+       return r_str
     
     r_std = os.getenv("r_standard") if r_std is None else r_std
+    r_std = r_std.upper()
     if r_std.upper() == "SDTM_V2_0":
         r_condition = rule_data.iloc[0]["Condition"]
         r_rule = rule_data.iloc[0]["Rule"]
@@ -57,6 +58,8 @@ def get_jmsg(rule_data, exist_rule_data: dict = {}, r_std:str=None):
         v_stp = 1.4
         v_msg = " . r_desc3: " + str(r_str)        # Debugging print statement
         echo_msg(v_prg, v_stp, v_msg, 4)
+        # Issue: https://github.com/cdisc-org/crbuilder/issues/3 so set it to empty 
+        r_str = ""
     elif r_std.upper() == "FDA_VR1_6":
         r_str = rule_data.iloc[0]["FDA Validator Rule Message"]
     else:

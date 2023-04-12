@@ -90,6 +90,9 @@ def proc_rules(r_standard,
         If `in_rule_folder` or `out_rule_folder` do not exist.
     """
     v_prg = __name__ 
+    v_stp = 1.0
+    v_msg = f"Getting environment variables for {r_standard}..."
+    echo_msg(v_prg, v_stp, v_msg,1)
     st_all = dt.datetime.now()
     load_dotenv()
 
@@ -119,31 +122,31 @@ def proc_rules(r_standard,
 
     # 1. get inputs
     # -----------------------------------------------------------------------
-    v_stp = 1.0
+    v_stp = 1.1
     v_msg = "Check input parameters..."
-    echo_msg(v_prg, v_stp, v_msg,1)
+    echo_msg(v_prg, v_stp, v_msg,2)
     yaml_file = os.getenv("yaml_file")
 
     if df_data is None:
-        v_stp = 1.01
+        v_stp = 1.11
         v_msg = "Get Rule Data from " + yaml_file
         echo_msg(v_prg, v_stp, v_msg, 2)
         if not os.path.isfile(yaml_file):
-            v_stp = 1.11
+            v_stp = 1.12
             v_msg = "Could not find file - " + yaml_file
             return 
         df_data = read_rules(yaml_file)
 
     if in_rule_folder is None:
-        v_stp = 1.02
+        v_stp = 1.13
         in_rule_folder = os.getenv("existing_rule_dir")
 
     if out_rule_folder is None:
-        v_stp = 1.03
+        v_stp = 1.14
         out_rule_folder = os.getenv("output_dir")
 
     if get_db_rule == 0 and not os.path.exists(in_rule_folder):
-        v_stp = 1.04
+        v_stp = 1.15
         v_msg = "Could not find input rule folder: " + in_rule_folder
         echo_msg(v_prg, v_stp, v_msg,2)
         return 
@@ -184,10 +187,13 @@ def proc_rules(r_standard,
     else:
         r_ids = {}
 
+    # 1.5     
+    r_cst = get_rule_constants(r_std)
+
     # 2. Group data by Rule ID
     # -----------------------------------------------------------------------
     v_stp = 2.0 
-    v_msg = "Filtering and Grouping data..."
+    v_msg = f"Filtering and Grouping data..."
     echo_msg(v_prg, v_stp, v_msg,1)
     
     # 2.1 select by standard version

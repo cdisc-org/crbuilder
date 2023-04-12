@@ -48,6 +48,8 @@ def read_db_rule(rule_id: str, db_cfg = None, r_ids = None,
         v_stp = 2.1
         r_docs = r_ids.get(rule_id, {}).get("ids")
         d_id = r_docs[0]
+        v_msg = f"READ: {d_id} for {rule_id}"
+        echo_msg(v_prg, v_stp, v_msg, 2)
         try:
             v_stp = 2.11
             v_msg = f"Reading {rule_id} ({d_id}) in {db}.{ct}"
@@ -59,7 +61,6 @@ def read_db_rule(rule_id: str, db_cfg = None, r_ids = None,
             echo_msg(v_prg, v_stp, v_msg, 0)
     else:
         v_stp = 2.2
-        
         v_msg = f"Could not find {rule_id} in {db}.{ct}"
         echo_msg(v_prg, v_stp, v_msg, 0)
     

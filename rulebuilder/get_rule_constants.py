@@ -15,7 +15,8 @@ def get_rule_constants (r_std:str=None):
             "Organization": "FDA", 
             "Standards.Name": "SDTMIG",
             "Standards.References.Origin": "FDA Validator Rules",
-            "Standards.References.Version": "1.6"
+            "Standards.References.Version": "1.6",
+            "Standard.References.Rule_Identifier.Version": "1"
         },
         "Core": {
             "Status":   "Draft",

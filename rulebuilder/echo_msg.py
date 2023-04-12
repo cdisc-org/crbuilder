@@ -119,13 +119,13 @@ def echo_msg(prg, step, msg, lvl=0, fn=None, i:int=0, n:int=0):
     if lvl <= int(g_msg_lvl):
         print(fmt % (prg, step, msg))
     if log_f1 and wrt2log >= 1:
-        if not os.path.isfile(log_f1):
+        if not os.path.isfile(log_f1) and lvl == 1:
             print(f"*L1 Logging to: {log_f1}" )
         if lvl <= 1:
             with open(log_f1, "a") as f:
                 f.write(fmt % (prg, step, f"{msg}\n"))
     if log_f2 and wrt2log >= 1:
-        if not os.path.isfile(log_f2):
+        if not os.path.isfile(log_f2) and lvl == 2:
             print(f"*L2 Logging to: {log_f2}" )
         if lvl <= 2:
             with open(log_f2, "a") as f:

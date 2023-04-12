@@ -55,7 +55,7 @@ class RuleBuilder(ABC):
         } 
         v_prg = __name__ + ".init"
         v_stp = 1.0
-        v_msg = "Initializing..."
+        v_msg = f"Initializing for {r_standard}..."
         echo_msg(v_prg, v_stp,v_msg, 1)
 
         v_stp = 1.1
@@ -95,9 +95,9 @@ class RuleBuilder(ABC):
         #                   "ruleid_used": 0, "coreid_used": 0}
         v_stp = 1.3 
         # self.rule_data = read_rules(self.yaml_file)
-        self.rule_data = self.read_rule_definitions()
+        # self.rule_data = self.read_rule_definitions(r_std=r_std)
   
-    def read_rule_definitions (self):
+    def read_rule_definitions (self,r_std:str=None):
         """
         Read the rule definitions for the specified standard from a pickled file, 
         a YAML file, or the original Excel file.
@@ -109,7 +109,7 @@ class RuleBuilder(ABC):
         v_stp = 1.0
         v_msg = f"Reading rule definition for {self.r_standard}..."
         echo_msg(v_prg, v_stp, v_msg, 1)
-        v_std = self.r_standard
+        v_std = self.r_standard if r_std is None else r_std  
         v_ifn = self.rule_files.get(v_std, {}).get("file_name")
         v_sheet = self.rule_files.get(v_std, {}).get("rule_sheet")
 
@@ -162,12 +162,13 @@ class RuleBuilder(ABC):
             ct_name (str): The name of the container to use (default: "core_rules_dev").
         """
         v_prg = __name__ + ".process"
+        load_dotenv() 
         v_stp = 1.0
         v_msg = "Processing CORE rule definitions..."
         if r_standard is None:
             r_standard = self.r_standard
-        else:
-            self.__init__(r_standard=r_standard)
+        # else:
+        #    self.__init__(r_standard=r_standard)
         if r_standard is None:
             v_stp = 1.1
             v_msg = "No rule standard is provided."
@@ -190,13 +191,13 @@ class RuleBuilder(ABC):
         if ct_name is None:
             ct_name = os.getenv("DEV_COSMOS_CONTAINER")
 
+        r_data = read_rule_definitions(r_std=r_standard)
 
         # 2. Call to the rule processor 
         v_stp = 2.0
-        echo_msg(v_prg, v_stp, f"Calling to proc_rules", 1)
-        load_dotenv() 
+        echo_msg(v_prg, v_stp, f"Calling to proc_rules for {r_ids}", 1)
         proc_rules(r_standard = r_standard,
-                    df_data=self.rule_data, 
+                    df_data=r_data, 
                     in_rule_folder=self.existing_rule_dir,
                     out_rule_folder=self.output_dir,
                     rule_ids=r_ids, 

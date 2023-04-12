@@ -9,6 +9,7 @@
 #   04/05/2023 (htu) - added db_cfg, db_name, ct_name and r_ids and reading from a DB
 #   04/06/2023 (htu) - commented out "transformer.transformer"
 #   04/07/2023 (htu) - added steps 2.11 and 2.12 to back up the rule read from the DB
+#   04/11/2023 (htu) - added step 2.13
 #    
 
 import os
@@ -49,12 +50,13 @@ def get_existing_rule(rule_id, in_rule_folder,
     echo_msg(v_prg, v_stp, v_msg, 2)
     if in_rule_folder is None:
         in_rule_folder = os.getenv("existing_rule_dir")
+    json_rule_dir = os.getenv("json_rule_dir")
 
     # 2 get json data either from db or rule folder
     v_stp = 2.0
     if get_db_rule == 1: 
         v_stp = 2.1
-        v_msg = f"Getting rule doc from {ct_name}.{db_name}..."
+        v_msg = f"Getting rule doc from {db_name}.{ct_name}..."
         echo_msg(v_prg, v_stp, v_msg, 2)
         json_data = read_db_rule(rule_id=rule_id, db_cfg=db_cfg,r_ids=r_ids,
                                  db_name=db_name,ct_name=ct_name)
@@ -64,6 +66,7 @@ def get_existing_rule(rule_id, in_rule_folder,
             echo_msg(v_prg, v_stp, v_msg, 3)
             os.makedirs(in_rule_folder)
         v_stp = 2.12
+        doc_id = json_data.get("id")
         v_status = json_data.get(
             "json", {}).get("Core", {}).get("Status")
         if v_status is None:
@@ -73,6 +76,10 @@ def get_existing_rule(rule_id, in_rule_folder,
         v_msg = f"Backing up the rule to {ofn}..."
         echo_msg(v_prg, v_stp, v_msg, 2)
         with open(ofn, 'w') as f:
+            json.dump(json_data, f, indent=4)
+        v_stp = 2.13
+        fn2 = f"{json_rule_dir}/{doc_id}.json"
+        with open(fn2, 'w') as f:
             json.dump(json_data, f, indent=4)
     else: 
         v_stp = 2.2

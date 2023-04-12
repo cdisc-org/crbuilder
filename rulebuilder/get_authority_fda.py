@@ -67,6 +67,9 @@ def get_authority_fda(rule_data, rule_obj=None, r_std: str = None, rule_constant
     d2_rules = rule_obj      # data from content
     d2_auth = d2_rules.get("Authorities")
     # print(f"Authorities: {d2_auth}")
+    v_msg = f"D2_Auth: ----------"
+    echo_msg(v_prg, v_stp, v_msg, 8)
+    echo_msg(v_prg, v_stp, d2_auth, 8)
 
     v_stp = 2.0
     v_msg = "Looping through each row of the rule records..."
@@ -91,11 +94,7 @@ def get_authority_fda(rule_data, rule_obj=None, r_std: str = None, rule_constant
         rule_id = row.get("Rule ID")
         v_docum = row.get("Publisher")
         v_cited = row.get("Publisher ID")
-        r_a_cit = {"Cited_Guidance": v_cited
-                   , "Document": v_docum
-        #          , "Item": v_item
-        #          , "Section": row.get("Section")
-                   }
+        r_a_cit = {"Cited_Guidance": v_cited, "Document": v_docum}
 
         for j in v_vs: 
             v_ig_version = re.sub(r'([G|R|T])(\d)', r'\1 \2', j)
@@ -114,6 +113,7 @@ def get_authority_fda(rule_data, rule_obj=None, r_std: str = None, rule_constant
 
                 # 2.2 append citation
                 v_stp = 2.2
+                r_a_cit = {"Cited_Guidance": v_cited, "Document": v_docum}
                 # if not v_item:  # Check if "Item" is empty
                 #    del r_a_cit["Item"]  # Remove "Item" key from r_a_cit dictionary
                 r_cits.append(r_a_cit)
@@ -124,6 +124,9 @@ def get_authority_fda(rule_data, rule_obj=None, r_std: str = None, rule_constant
                 echo_msg(v_prg, v_stp, v_msg, 5)
                 # print(f"Row {i}: {r_a_cit}")
                 v_rule_version = row.get("Rule Version")
+                if v_rule_version is None: 
+                    v_rule_version = r_cst.get("Authorities").get(
+                        "Standard.References.Rule_Identifier.Version")
                 r_a_ref = {"Origin": v_orig,
                    "Rule_Identifier": {
                        "Id": rule_id,
@@ -136,13 +139,11 @@ def get_authority_fda(rule_data, rule_obj=None, r_std: str = None, rule_constant
 
                 # 2.4 we build a standard from rule definition
                 v_stp = 2.4
-                # v_sdtmig_version = df_rules.iloc[i]["SDTMIG Version"]
-
                 r_a_std = {"Name": v_stdn,
                    "Version": v_ig_version,
                    "References": [r_a_ref]
                    }
-
+                v1_id = f"{v_stdn}{v_ig_version}"
                 # 2.5 we check standards in the existing rule
                 if d2_auth is not None:
                     v_stp = 2.5
@@ -151,13 +152,15 @@ def get_authority_fda(rule_data, rule_obj=None, r_std: str = None, rule_constant
                     # we will use it
                     for auth_std in d2_auth:
                         for standard in auth_std["Standards"]:
+                            d2_stdn = standard.get("Name")
                             # Check the version of the standard
                             d2_ig_version = standard.get('Version')
-                            if d2_ig_version == v_ig_version:
-                                v_msg = " . SDTMIG Versions matched: " + \
-                                    str(v_ig_version) + "->" + \
-                                    str(d2_ig_version)
-                                echo_msg(v_prg, v_stp, v_msg, 3)
+                            v2_id = f"{d2_stdn}{d2_ig_version}"
+                            v_msg = f" . V1V2: {str(v1_id)}-->>{str(v2_id)}"
+                            echo_msg(v_prg, v_stp, v_msg, 4)
+                            if v1_id == v2_id:
+                                v_msg = f"   Standard Versions matched." 
+                                echo_msg(v_prg, v_stp, v_msg, 4)
                                 r_a_std = standard
                                 d2_ig_version = None
                                 break

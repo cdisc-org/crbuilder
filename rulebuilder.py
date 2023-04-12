@@ -9,7 +9,8 @@
 # python rulebuilder.py process --s_domain "AE,DM" --pub2db 1
 # python rulebuilder.py process --s_version "3.4" --pub2db 1
 # python rulebuilder.py process --s_class "EVT"  --pub2db 1
-# python rulebuilder.py process --r_standard FDA_VR1_6 --r_ids CT2001
+# python rulebuilder.py process --r_standard FDA_VR1_6 --r_ids CT2001 --ct_name editor_rules_dev
+# python rulebuilder.py process --r_standard FDA_VR1_6 --r_ids CT2001 --ct_name editor_rules_dev --pub2db 1
 
 import click
 from rulebuilder.rbuilder import RuleBuilder
@@ -28,7 +29,7 @@ def cli():
 def initialize(r_standard, r_dir, i_fn, core_base_url, creator_url):
     if r_standard is None:
         print("No rule definition standard is provided.")
-        print(" . Nothing will be initialied. ")
+        print(" . Nothing will be initialized. ")
         return 
     return RuleBuilder(r_standard=r_standard, r_dir=r_dir, i_fn=i_fn,
                      core_base_url=core_base_url, creator_url=creator_url)
@@ -43,13 +44,11 @@ def build_rule(rule_id):
 
 
 @cli.command()
-@click.option('--db_name', type=str, help='Name of database to query.')
-@click.option('--ct_name', type=str, help='Name of container to query.')
-@click.option('--write_file', type=bool, default=True, help='Whether or not to write output to file.')
-def get_doc_statistics(db_name, ct_name, write_file):
+@click.option('--db_name', type=str, default=None, help='Name of database to query.')
+@click.option('--ct_name', type=str, default=None, help='Name of container to query.')
+def get_doc_statistics(db_name, ct_name):
     rb = RuleBuilder()
-    w2f = 1 if write_file else 0 
-    rb.get_doc_stats(db_name, ct_name, wrt2file=w2f)
+    rb.get_doc_stats(db_name=db_name, ct_name=ct_name)
 
 
 @cli.command()

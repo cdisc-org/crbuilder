@@ -4,6 +4,7 @@
 #   03/31/2023 (htu) - initial coding based on
 #     https://learn.microsoft.com/en-us/python/api/overview/azure/cosmos-readme?view=azure-python#create-a-container
 #   04/03/2023 (htu) - renamed container_name to ct_name 
+#   04/11/2023 (htu) - get db_name and ct_name from .env if they are not specified 
 #
 
 import os
@@ -31,15 +32,19 @@ def get_db_cfg (db_name:str='library',ct_name:str=None):
     v_stp = 1.0
     v_msg = "Configuring database connections..."
     echo_msg(v_prg, v_stp, v_msg,2)
+    load_dotenv()
+    if db_name is None:
+        db_name = os.getenv("DEV_COSMOS_DATABASE")
+    if ct_name is None:
+        ct_name = os.getenv("DEV_COSMOS_CONTAINER")
 
     if db_name is None:
         v_stp = 1.1
         v_msg = "Database name is required."
         echo_msg(v_prg, v_stp, v_msg,1)
-        return {}
+        return None
 
     # 1.2 check if the database exists
-    load_dotenv()
     url = os.getenv("DEV_COSMOS_URL")
     key = os.getenv("DEV_COSMOS_KEY")
     db_cfg = {"url": url, "key": key, "db_name": db_name, 
@@ -88,6 +93,10 @@ def get_db_cfg (db_name:str='library',ct_name:str=None):
         v_stp = 1.43
         v_msg = "No container name is specified."
         echo_msg(v_prg, v_stp, v_msg,0)
+    
+    v_stp = 1.5
+    v_msg = f"DB connected to {db_name}.{ct_name}"
+    echo_msg(v_prg, v_stp, v_msg, 1)
 
     return db_cfg 
 
