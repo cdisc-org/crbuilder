@@ -5,10 +5,13 @@
 #   03/23/2023 (htu) - added proc_ap_fa,dc_class and proc_exclude
 #   03/23/2023 (htu) - updated v_pat to capture spaces between not and ()
 #   03/30/2023 (htu) - commented out prints 
+#   04/13/2023 (htu) - added echo_msg and improved logic for processing AP
 
 import os
 import re 
 import pandas as pd
+from rulebuilder.echo_msg import echo_msg
+
 
 def decode_classes(df_data, df_map = None):
     """
@@ -22,12 +25,18 @@ def decode_classes(df_data, df_map = None):
     Returns:
         pandas.DataFrame: The updated DataFrame with decoded values in new columns.
     """
+    v_prg = __name__
+    v_stp = 1.0
+    v_msg = "Decoding classes and domains..."
+    echo_msg(v_prg, v_stp, v_msg, 3)
+
     df = df_data 
     # 1. define a lookup table
     if df_map == None: 
         df_map = {
             "class": {"EVT": "EVENTS", "FND": "FINDINGS", "INT": "INTERVENTIONS",
-                      "SPC": "SPECIAL PURPOSE", "TDM": "TRIAL DESIGN", "AP": "ASSOCIATE PERSONS"
+                      "SPC": "SPECIAL PURPOSE", "TDM": "TRIAL DESIGN"
+        #              , "AP": "ASSOCIATE PERSONS"
                 },
             "fa": {"FND:FA": "FINDINGS ABOUT"},
             "v_pat": re.compile("NOT\s*\(([\w ,]+)\)", re.IGNORECASE)
@@ -40,11 +49,24 @@ def decode_classes(df_data, df_map = None):
     def proc_ap_fa (i,v_class, v_domain):
         r_bool  = False
         # 4.1.a process AP and ALL
-        if v_class in ("AP") and v_domain in ("ALL"):
+        # if v_class in ("AP") and v_domain in ("ALL"):
+        if v_class == "AP":
             df.iloc[i]["Class"] = ["ALL"]
             df.iloc[i]["Domain"] = ["AP--"]
-            r_bool = True
-        
+            r_bool = True 
+            v_stp = 4.11 
+            v_domain.upper().strip()
+            match = v_pat.search(v_domain)
+            if match:
+                v_msg = f"Process AP: {v_domain}"
+                echo_msg(v_prg, v_stp, v_msg,8)
+                s_list = pd.Series(match.group(1).split(","))
+                # apply strip to each element
+                s_list = s_list.apply(lambda x: x.strip())
+                df.iloc[i]['Domains_Exclude'] = s_list.tolist()
+                if "FA" in s_list.tolist():
+                    df.iloc[i]["Class"] = ["FINDINGS ABOUT"]
+           
         # 4.1.b process NOT (AP) and ALL
         m1 = re.search(v_pat, v_class) 
         m2 = re.search(v_pat, v_domain)
@@ -78,6 +100,7 @@ def decode_classes(df_data, df_map = None):
                 df.iloc[i]["Domain"] = ["ALL"]
                 df.iloc[i]["Classes_Exclude"] = [df_map["fa"].get(k2)]
                 r_bool = True
+
         
         return r_bool 
 
@@ -122,8 +145,6 @@ def decode_classes(df_data, df_map = None):
         # End of proc_exclude 
 
     # 3. add two columns in df
-    # df['Classes_Exclude'] = pd.Series([None] * len(df))
-    # df['Domains_Exclude'] = pd.Series([None] * len(df))
 
     df.loc[:, 'Classes_Exclude'] = pd.Series([None] * len(df))
     df.loc[:, 'Domains_Exclude'] = pd.Series([None] * len(df))
@@ -135,13 +156,14 @@ def decode_classes(df_data, df_map = None):
         v_class = row.Class.upper().strip()
         v_domain = row.Domain.upper().strip()
         # print(
-        #     f"{__name__}: Row {i} ({v_ruleid}) - Class: {v_class}\n    Domain: {v_domain}")
+        v_msg = f"Row {i} {v_ruleid} - Class: {v_class}; Domain: {v_domain}"
+        echo_msg(v_prg, v_stp, v_msg, 8)
         # 4.1 mapping AP and its domain FA and its class
         if proc_ap_fa(i, v_class, v_domain):
             continue
         
-        # 4.2 process Class exclude
-        proc_exclude(i,row, "class")
+        # 4.2 process class and domain exclude
+        proc_exclude(i, row, "class")
         proc_exclude(i, row, "domain")
 
     return df 
