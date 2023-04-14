@@ -112,13 +112,13 @@ def proc_rules(r_standard,
     if log_cfg is None: 
         log_cfg = create_log_dir(wrt2log=wrt2log)
     s_dir = log_cfg["s_dir"]
+    sub_dir = log_cfg["sub_dir"]
     log_fdir = log_cfg["log_fdir"]
     job_id = log_cfg["job_id"]
     log_dir = log_cfg["log_dir"]
     if job_id is None:
         job_id = now_utc.strftime("J%H%M%S")
-    rst_fn = log_dir + s_dir + f"/job-{job_id}-proc.xlsx"
-
+    rst_fn = f"{log_dir}/{sub_dir}/job-{job_id}-proc.xlsx"
 
     # 1. get inputs
     # -----------------------------------------------------------------------
@@ -259,7 +259,8 @@ def proc_rules(r_standard,
     ipt_msg += f" . R_Standard: {r_std}\n"
     ipt_msg += f" . Rule Data: {num_records_processed}\n"
     ipt_msg += f" . Existing Rule Folder: {in_rule_folder}\n"
-    ipt_msg += f" . Output Folder: {out_rule_folder} Sub Dir: {s_dir}\n" 
+    ipt_msg += f" . Output Folder: {out_rule_folder} S_Dir: {s_dir}\n" 
+    ipt_msg += f" . Output Sub Dir: {sub_dir}\n" 
     ipt_msg += f" . Selection - Rule IDs: {','.join(rule_ids)}\n"
     ipt_msg += f" . Selection - Versions: {','.join(s_version)}\n"
     ipt_msg += f" . Selection - Classes: {','.join(s_class)}\n"

@@ -33,8 +33,8 @@ def create_log_dir(log_dir: str = None, job_id: str = None,
     r_dir = "." if r_dir is None else r_dir
     log_dir = os.getenv("log_dir") if log_dir is None else log_dir
     log_dir = f"{r_dir}/logs" if log_dir is None else log_dir 
-    log_f1 = f"{log_dir}{s_dir}/job-{job_id}-log1.txt"
-    log_f2 = f"{log_dir}{s_dir}/job-{job_id}-log2.txt"
+    log_f1 = f"{log_dir}{sub_dir}/job-{job_id}-log1.txt"
+    log_f2 = f"{log_dir}{sub_dir}/job-{job_id}-log2.txt"
 
     os.environ["job_id"] = job_id
     os.environ["s_dir"] = s_dir
@@ -76,7 +76,7 @@ def create_log_dir(log_dir: str = None, job_id: str = None,
     # 2.0 check log_dir 
     create_dir(2.1, log_dir)
 
-    log_fdir = log_dir + sub_dir
+    log_fdir = f"{log_dir}{sub_dir}/logs"
     create_dir(2.2, log_fdir)
 
     r_cfg["log_fdir"] = log_fdir

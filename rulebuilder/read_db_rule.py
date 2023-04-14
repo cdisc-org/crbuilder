@@ -48,6 +48,7 @@ def read_db_rule(rule_id: str, db_cfg = None, r_ids = None,
     if rule_id in r_ids.keys():
         v_stp = 2.1
         r_docs = r_ids.get(rule_id, {}).get("ids")
+        d_id = r_docs[0]
         if r_ids[rule_id]["cnt"] > 1:
             for i in range(len(r_ids[rule_id]["status"])):
                 v_cs = r_ids[rule_id]["status"][i]
@@ -55,8 +56,6 @@ def read_db_rule(rule_id: str, db_cfg = None, r_ids = None,
                     # we will use published document 
                     d_id = r_ids[rule_id]["ids"][i]
                     break 
-        else: 
-            d_id = r_docs[0]
         v_msg = f"READ: {d_id} for {rule_id}"
         echo_msg(v_prg, v_stp, v_msg, 2)
         try:

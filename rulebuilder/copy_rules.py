@@ -82,7 +82,7 @@ def copy_rules(r_str:str = None, f_ct:str=None, t_ct:str=None, f_db: str = None,
         r_i += 1 
         v_stp = 4.1
         v_msg = f"{r_i}/{r_cnt}: Copying rule id {r_id}..."
-        echo_msg(v_prg, v_stp, v_msg, 3)
+        echo_msg(v_prg, v_stp, v_msg, 2)
         
         if r_id not in r_ids.keys():
             v_stp = 4.11
@@ -162,8 +162,8 @@ if __name__ == "__main__":
     os.environ["write2log"] = "0"
     v_prg = __name__ + "::copy_rules"
     # r_str = "CG0143, CG0100,CG0377,CG0041,CG0033"
-    # r_str = "ALL"
-    r_str = "CG0017"
+    r_str = "ALL"
+    # r_str = "CG0001,CG0002,CG0006,CG0017,CG0155,CG0156,CG0100,CG0143"
     f_db = 'library'
     t_db = 'library'
     f_ct = 'editor_rules_dev_20230411'

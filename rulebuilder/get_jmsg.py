@@ -4,6 +4,7 @@
 #   03/21/2023 (htu) - extracted out from get_desc 
 #   03/22/2023 (htu) - added exist_rule_data 
 #   04/10/2023 (htu) - added r_std 
+#   04/14/2023 (htu) - fixed a bug - missing "Outcome" while getting the Message
 #
 
 import pandas as pd
@@ -35,7 +36,7 @@ def get_jmsg(rule_data, exist_rule_data: dict = {}, r_std:str=None):
     v_stp = 1.0
     v_msg = "Getting Message for json.Message..."
     echo_msg(v_prg, v_stp, v_msg, 3)
-    r_str = exist_rule_data.get("json", {}).get("Message")
+    r_str = exist_rule_data.get("json", {}).get("Outcome",{}).get("Message")
     if r_str is not None:
        return r_str
     

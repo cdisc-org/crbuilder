@@ -215,8 +215,8 @@ def get_doc_stats(qry: str = None, db: str = 'library',
         s_dir = tm.strftime("/%Y/%m/%d/")
         if job_id is None: 
             job_id = tm.strftime("%Y%m%d_%H%M%S")
-        rst_fn = log_dir + s_dir + f"job-{job_id}-stat.xlsx"
-        jsn_fn = log_dir + s_dir + f"job-{job_id}-stat.json"
+        rst_fn = f"{log_dir}{s_dir}/{job_id}/job-{job_id}-stat.xlsx"
+        jsn_fn = f"{log_dir}{s_dir}/{job_id}/job-{job_id}-stat.json"
         v_msg = "Output result to " + rst_fn + "..." 
         echo_msg(v_prg, v_stp, v_msg,2)
         df_log.to_excel(rst_fn, index=False)

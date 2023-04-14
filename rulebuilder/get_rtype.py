@@ -67,10 +67,10 @@ def get_rtype(rule_data, exist_rule_data: dict = {}, r_std:str=None):
     #    return None
 
     v_stp = 1.1
-    if rule_data.empty:
-        v_msg = "Input parameter rule_data is empty."
-        echo_msg(v_prg, v_stp, v_msg, 0)
-        return None
+    # if rule_data.empty:
+    #     v_msg = "Input parameter rule_data is empty."
+    #     echo_msg(v_prg, v_stp, v_msg, 0)
+    #     return None
 
     r_str = exist_rule_data.get("json", {}).get("Rule_Type")
     if r_str is not None:

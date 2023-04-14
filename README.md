@@ -124,36 +124,42 @@ This project is licensed under the MIT License - see the LICENSE.md file for det
 
 ## History
 
-### Version 0.4.0 (planned)
+### Version 0.4.1
 
-* Add capability of processing FDA conformance rules
-* Add log level for creating log details 
+* Enhanced logging
+* Fixed additional issues related SDTM standards
+* Added standard switches
+
+### Version 0.4.0
+
+* Added capability of processing FDA conformance rules
+* Added log level for creating log details
+* Fixed 3 issues related to SDTM rule processing
 
 ### Version 0.3.1
 
 * Moved from my personal repo [core-rule-builder](https://github.com/htu/core-rule-builder) to CDISC repo [crbuilder](https://github.com/cdisc-org/crbuilder)
 * Added command-line options
-* Added README 
+* Added README
 * Added backup as a default behavior while getting rule definition from database
 
 ### Version 0.3.0
 
-* Added logging capability to produce a log file per rule 
+* Added logging capability to produce a log file per rule
 * Added report capability for all the rules processed
-* Added reading from and publishing to the database 
+* Added reading from and publishing to the database
 * Added backup capability
-* Added de-duplication capability 
+* Added de-duplication capability
 
 ### Version 0.2.0
 
-* Added mutiple rule processing capability
-* Added error handling and message processing 
-* Added processing status report 
+* Added multiple rule processing capability
+* Added error handling and message processing
+* Added processing status report
 * Fixed some rule bugs  
 
 ### Version 0.1.0
+
 * Set up process framework
 * Read rules from a local rule folder
-* Produced single rule and pass rule validation 
-
-
+* Produced single rule and pass rule validation

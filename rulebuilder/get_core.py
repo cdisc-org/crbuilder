@@ -6,6 +6,7 @@
 #   03/21/2023 (htu) - 
 #     08. Don't add Core.Id
 #   04/11/2023 (htu) - added r_std and r_constants and removed org and std
+#   04/14/2023 (htu) - added code to skip if Core exists 
 #    
 
 
@@ -67,6 +68,9 @@ def get_core(rule_id: str = None, r_std: str = None, r_constants: dict=None, exi
     
     d2_json =  exist_rule_data
     r_json = d2_json.get("json",{}).get("Core")
+    if r_json is not None:
+        return r_json 
+
     v_org = r_cst.get("Authorities").get("Organization")
     v_snm = r_cst.get("Authorities").get("Standards.Name")
     core_id = v_org + '.' + v_snm + '.' + rule_id 
