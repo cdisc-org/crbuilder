@@ -4,9 +4,11 @@
 #   04/13/2023 (htu) - initial coding based on get_doc_stats
 #
 import os
+import datetime as dt
 from dotenv import load_dotenv
 from rulebuilder.echo_msg import echo_msg
 from rulebuilder.get_db_cfg import get_db_cfg
+from rulebuilder.create_log_dir import create_log_dir
 from rulebuilder.get_doc_stats import get_doc_stats
 from azure.cosmos.exceptions import CosmosResourceNotFoundError
 
@@ -28,6 +30,13 @@ def copy_rules(r_str:str = None, f_ct:str=None, t_ct:str=None, f_db: str = None,
         v_msg = "Missing From or To DB or CT specification. "
         echo_msg(v_prg, v_stp, v_msg, 0)
         return
+    
+    tm = dt.datetime.now()
+    job_id = tm.strftime("J%H%M%S")
+    
+    if write2file > 0:
+        create_log_dir(job_id=job_id)
+
 
     t_db = f_db if t_db is None else t_db 
     v_msg = f"Copying rules ({r_str}) from {f_db}.{f_ct} to {t_db}.{t_ct}..."
@@ -41,14 +50,17 @@ def copy_rules(r_str:str = None, f_ct:str=None, t_ct:str=None, f_db: str = None,
 
     cfg1 = get_db_cfg(db_name=f_db, ct_name=f_ct)
     cfg2 = get_db_cfg(db_name=t_db, ct_name=t_ct)
-    c1 = cfg1["ct_conn"]
-    c2 = cfg2["ct_conn"]
+    c1 = cfg1["ct_conn"]        # source container
+    c2 = cfg2["ct_conn"]        # target container 
+    v_stp = 2.1
+    v_msg = f"-----C1: {c1}\n-----C2: {c2}"
+    echo_msg(v_prg, v_stp, v_msg, 3)
 
     # 3.0 get source container stats
     v_stp = 3.0
     v_msg = "Getting source DB stats..."
     echo_msg(v_prg, v_stp, v_msg, 3)
-    r_ids = get_doc_stats(db_cfg=cfg1,wrt2file=write2file)
+    r_ids = get_doc_stats(job_id=job_id, db_cfg=cfg1,wrt2file=write2file)
 
     # 4.0 Loop through each rule ids requested
     v_stp = 4.0
@@ -78,19 +90,29 @@ def copy_rules(r_str:str = None, f_ct:str=None, t_ct:str=None, f_db: str = None,
         for doc_id in v_doc: 
             v_stp = 4.31
             e_doc = None 
+            core_id = None 
             try: 
-                v_msg = f"Reading doc {doc_id}..."
+                v_msg = f"Reading doc {doc_id} from {c1}..."
                 echo_msg(v_prg, v_stp, v_msg, 4)
                 e_doc = c1.read_item(item=doc_id, partition_key=doc_id)
+                core_id = e_doc.get("json", {}).get("Core", {}).get("Id")
             except Exception as e:
                 v_msg = f"Error: {e}\n . DocID: {doc_id}"
                 echo_msg(v_prg, v_stp, v_msg, 4)
-            core_id = e_doc.get("json", {}).get("Core", {}).get("Id")
             v_stp = 4.32
-            try:
-                c2.delete_item(item=e_doc, partition_key=doc_id)
-                v_msg = f" . Document with id {doc_id} deleted."
+            if core_id is None:
+                v_msg = f"We could not find the source doc {doc_id} in {c1}."
                 echo_msg(v_prg, v_stp, v_msg, 4)
+                continue 
+            try:
+                try: 
+                    t_doc = c2.read_item(item=doc_id, partition_key=doc_id)
+                    c2.delete_item(item=t_doc, partition_key=doc_id)
+                    v_msg = f" . Document with id {doc_id} {core_id} deleted from {c2}."
+                    echo_msg(v_prg, v_stp, v_msg, 4)
+                except Exception as e: 
+                    v_msg = f"Doc {doc_id} does not exist in {c2}"
+                    echo_msg(v_prg, v_stp, v_msg, 4)
             except Exception as e:
                 v_msg = f"Error: {e}\n . DocID: {doc_id},  CoreID: {core_id}"
                 echo_msg(v_prg, v_stp, v_msg, 4)
@@ -98,7 +120,7 @@ def copy_rules(r_str:str = None, f_ct:str=None, t_ct:str=None, f_db: str = None,
             try: 
                 # Create a new document with the same id
                 c2.create_item(body=e_doc, partition_key=doc_id)
-                v_msg = f" . Document with id {doc_id} created."
+                v_msg = f" . Document with id {doc_id} {core_id} created in {c2}."
                 echo_msg(v_prg, v_stp, v_msg, 4)
                 break 
             except Exception as e:
@@ -114,11 +136,11 @@ if __name__ == "__main__":
     # set input parameters
     load_dotenv()
     os.environ["g_msg_lvl"] = "5"
-    os.environ["write2log"] = "0"
+    os.environ["write2log"] = "1"
     v_prg = __name__ + "::copy_rules"
-    r_ids = "CG0143, CG0100,CG0377"
+    r_ids = "CG0143, CG0100,CG0377,CG0041,CG0033"
     f_db = 'library'
     t_db = 'library'
     f_ct = 'editor_rules_dev_20230411'
     t_ct = 'editor_rules_dev'
-    copy_rules(r_ids, f_ct, t_ct, f_db, t_db)
+    copy_rules(r_ids, f_ct, t_ct, f_db, t_db, write2file=1)
