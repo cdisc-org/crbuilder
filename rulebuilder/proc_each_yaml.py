@@ -263,7 +263,8 @@ def proc_each_yaml (rule_id:str=None,rule_data = None, rule_obj = None,
 
     # # get json Scope       
     # rule_obj["json"]["Scope"] = get_scope(rule_data)
-    y2["Scope"] = get_scope(rule_data)
+    y2["Scope"] = get_scope(rule_data,r_std=r_std, 
+        exist_rule_data=rule_obj,r_cst=r_cst)
 
     # 2.11 get Executability
     v_stp = 2.11
@@ -273,7 +274,7 @@ def proc_each_yaml (rule_id:str=None,rule_data = None, rule_obj = None,
 
     # # get json Executability 
     # rule_obj["json"]["Executability"] = get_executability(rule_data)
-    y2["Executability"] = get_executability(rule_data)
+    y2["Executability"] = get_executability(rule_data,r_std=r_std, rule_obj=rule_obj)
 
     # 3.0 get Rule Check: this deserve a full section  
     v_stp = 3.0
@@ -290,7 +291,7 @@ def proc_each_yaml (rule_id:str=None,rule_data = None, rule_obj = None,
     echo_msg(v_prg, v_stp, y2.get("Check"), 9)
 
     y2["Check"] = get_check(
-        rule_data, exist_rule_data=y2)
+        rule_data, exist_rule_data=rule_obj)
 
 
     # 4.0 put components together 

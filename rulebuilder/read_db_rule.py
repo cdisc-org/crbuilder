@@ -2,6 +2,7 @@
 # -----------------------------------------------------------------------------
 # History: MM/DD/YYYY (developer) - description
 #   04/05/2023 (htu) - initial coding 
+#   04/14/2023 (htu) - added logic to deal with multiple documents in step 2.1
 #
 import os
 import sys
@@ -47,7 +48,15 @@ def read_db_rule(rule_id: str, db_cfg = None, r_ids = None,
     if rule_id in r_ids.keys():
         v_stp = 2.1
         r_docs = r_ids.get(rule_id, {}).get("ids")
-        d_id = r_docs[0]
+        if r_ids[rule_id]["cnt"] > 1:
+            for i in range(len(r_ids[rule_id]["status"])):
+                v_cs = r_ids[rule_id]["status"][i]
+                if v_cs == "Published": 
+                    # we will use published document 
+                    d_id = r_ids[rule_id]["ids"][i]
+                    break 
+        else: 
+            d_id = r_docs[0]
         v_msg = f"READ: {d_id} for {rule_id}"
         echo_msg(v_prg, v_stp, v_msg, 2)
         try:
@@ -73,7 +82,8 @@ if __name__ == "__main__":
     os.environ["g_lvl"] = "3"
     v_prg = __name__ + "::read_db_rule"
     # rule_list = ["CG0373", "CG0378", "CG0379"]
-    rule_id = "CG0015"
+    # rule_id = "CG0015"
+    rule_id = "CG0100"
     db = 'library'
     ct = 'editor_rules_dev'
     r = read_db_rule(rule_id=rule_id,db_name=db,ct_name=ct)

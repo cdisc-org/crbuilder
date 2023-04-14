@@ -12,6 +12,7 @@
 #     1. added more debug message in step 4.12
 #     2. added deep_match 
 #     3. added step 4.32 to write out r_ids 
+#   04/14/2023 (htu) - added r_ids[r_id]["status"]
 #
 import os
 import re
@@ -52,7 +53,7 @@ def get_doc_stats(qry: str = None, db: str = 'library',
 
     # . 2.0 get DB configuration
     v_stp = 2.0
-    v_msg = f"Get DB configuration ({db_cfg})..."
+    v_msg = f"Get DB configuration ({db}.{ct})..."
     echo_msg(v_prg, v_stp, v_msg, 2)
     if db_cfg is None: 
         v_stp = 2.1 
@@ -125,7 +126,7 @@ def get_doc_stats(qry: str = None, db: str = 'library',
         try: 
             v_stp = 4.11
             v_msg = f" {doc_cnt}/{tot_docs} Trying to get Rule ID from [{core_id}] {doc_id}..."
-            echo_msg(v_prg, v_stp, v_msg, 4)
+            echo_msg(v_prg, v_stp, v_msg, 8)
             if core_id is None or len(core_id) == 0:
                 echo_msg(v_prg, v_stp, i, 9)
             r_auth = i.get("json", {}).get("Authorities")
@@ -154,15 +155,16 @@ def get_doc_stats(qry: str = None, db: str = 'library',
             echo_msg(v_prg, v_stp, v_msg, 4)
             r_id = "NoRuleID"            # we assigned "NoRuleID" to it
         if r_id not in r_ids.keys():
-            r_ids[r_id] = {"cnt":0, "ids": []}
+            r_ids[r_id] = {"cnt":0, "ids":[], "status":[]}
         if r_id != c_id and c_id is not None and r_id is not None:
             if c_id not in r_ids.keys():
-                r_ids[c_id] = {"cnt": 0, "ids": []}
+                r_ids[c_id] = {"cnt": 0, "ids": [], "status":[]}
             r_ids[c_id]["cnt"] += 1
             r_ids[c_id]["ids"].append(doc_id)
             df_row.update({"rule_id": c_id})
         r_ids[r_id]["cnt"] += 1
         r_ids[r_id]["ids"].append(doc_id)
+        r_ids[r_id]["status"].append(core_status)
         df_row.update({"rule_id": r_id})
         # get a list of IG versions 
         v_vs = []

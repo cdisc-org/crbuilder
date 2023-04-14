@@ -24,6 +24,7 @@ def get_scope(rule_data, exist_rule_data: dict = {}, r_std:str=None, r_cst = Non
     echo_msg(v_prg, v_stp, v_msg, 2) 
     
     r_json = exist_rule_data.get("json", {}).get("Scope")
+    print(f"Scope: {r_json}")
     if r_json is not None: 
         return r_json
 
