@@ -2,6 +2,8 @@
 # -----------------------------------------------------------------------------
 # History: MM/DD/YYYY (developer) - description
 #   04/07/2023 (htu) - initial coding
+#   04/14/2023 (htu) - added s_pub in process to select publisher 
+#
 # Examples:
 # python rulebuilder.py process --r_ids none  --pub2db 1
 # python rulebuilder.py process --r_ids all  --pub2db 1
@@ -61,13 +63,14 @@ def get_doc_statistics(db_name, ct_name):
 @click.option('--s_version', default=None, help='A list of versions to include.')
 @click.option('--s_class', default=None, help='A list of classes to include.')
 @click.option('--s_domain', default=None, help='A list of domains to include.')
+@click.option('--s_pub', default=None, help='A list of publisher to include.')
 @click.option('--wrt2log', default=1, help='A flag indicating whether to write output to a log file.')
 @click.option('--pub2db', default=0, help='A flag indicating whether to publish rules to a database.')
 @click.option('--get_db_rule', default=1, help='A flag indicating whether to get rules from a database.')
 @click.option('--db_name', default=None, help='The name of the database to use.')
 @click.option('--ct_name', default='core_rules_dev', help='The name of the container to use.')
 def process(r_standard:str=None, r_ids:str=None, s_version:str=None, 
-            s_class:str=None, s_domain:str=None, 
+            s_class:str=None, s_domain:str=None, s_pub:str=None,
             wrt2log:int=1, pub2db:int=1, 
             get_db_rule:int=0, db_name:str=None, ct_name:str=None):
     rb = RuleBuilder(r_standard=r_standard)
@@ -83,10 +86,12 @@ def process(r_standard:str=None, r_ids:str=None, s_version:str=None,
     v_ves = [] if s_version is None else [s.strip().upper() for s in s_version.split(',')]
     v_cls = [] if s_class is None else [s.strip().upper() for s in s_class.split(',')]
     v_dos = [] if s_domain is None else [s.strip().upper() for s in s_domain.split(',')]
+    v_pub = [] if s_pub is None else [s.strip().upper() for s in s_pub.split(',')]
     # print(f"Version: {len(v_ves)}: {v_ves}")
-    rb.process(r_standard=r_standard,
-        r_ids=v_ids, s_version=v_ves, s_class=v_cls, s_domain=v_dos,
-               wrt2log=wrt2log, pub2db=pub2db, get_db_rule=get_db_rule, db_name=db_name, ct_name=ct_name)
+    rb.process(r_standard=r_standard, r_ids=v_ids, 
+        s_version=v_ves, s_class=v_cls, s_domain=v_dos, s_pub=v_pub,
+        wrt2log=wrt2log, pub2db=pub2db, get_db_rule=get_db_rule, 
+        db_name=db_name, ct_name=ct_name)
 
 
 if __name__ == "__main__":

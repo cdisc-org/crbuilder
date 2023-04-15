@@ -4,8 +4,9 @@
 #   03/23/2023 (htu) - initial coding
 #   04/06/2023 (htu) - added r_standard, rule_files and read_rule_definitions 
 #   04/07/2023 (htu) - added r_standard in process method 
-#   04/10/2023 (htu) - added r_standard envrionemnt variable in __init__
-#   
+#   04/10/2023 (htu) - added r_standard environmental variable in __init__
+#   04/14/2023 (htu) - added s_pub for selecting by FDA Publisher in process 
+#  
 
 import os
 import re 
@@ -80,7 +81,7 @@ class RuleBuilder(ABC):
         # self.fn_xlsx = rule_files.get(r_std, {}).get("file_name")
         # self.fn_yaml = r_std.lower() + ".yaml"
         # self.fn_pick = r_std.lower() + ".pick"
-        # self.i_fn = self.fn_xlsx                            # keep for compatability
+        # self.i_fn = self.fn_xlsx                            # keep for compatibility
         # self.fp_xlsx = r_dir + "/data/source/xlsx/" + self.fn_xlsx
         # self.fp_yaml = r_dir + "/data/source/yaml/" + self.fn_yaml
         # self.fp_pick = r_dir + "/data/source/pick/" + self.fn_pick
@@ -91,8 +92,6 @@ class RuleBuilder(ABC):
         # self.yaml_file = r_dir + "/data/target/" + i_fn 
         self.output_dir = r_dir + "/data/output"
         self.existing_rule_dir = r_dir + "/data/output/orig_rules"
-        # self.stat_cnts = {"total": 0, "renamed": 0, "skipped": 0, "dupped": 0, 
-        #                   "ruleid_used": 0, "coreid_used": 0}
         v_stp = 1.3 
         # self.rule_data = read_rules(self.yaml_file)
         # self.rule_data = self.read_rule_definitions(r_std=r_std)
@@ -142,6 +141,7 @@ class RuleBuilder(ABC):
     def process(self, r_standard: str = None, 
                 r_ids=None, s_version: list = [],
                 s_class: list = [], s_domain: list = [],           
+                s_pub: list = [],
                 wrt2log: int = 1, pub2db: int = 0,
                 get_db_rule: int = 1,
                 db_name: str = None, ct_name: str = "core_rules_dev"
@@ -204,6 +204,7 @@ class RuleBuilder(ABC):
                     s_version=s_version,
                     s_class=s_class, 
                     s_domain=s_domain,
+                    s_pub = s_pub,
                     wrt2log=wrt2log, 
                     pub2db=pub2db,
                     get_db_rule=get_db_rule,

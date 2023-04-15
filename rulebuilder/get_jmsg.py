@@ -17,13 +17,13 @@ def get_jmsg(rule_data, exist_rule_data: dict = {}, r_std:str=None):
     """
     Returns a JSON message string based on the given rule data.
 
-    Paramgers:
+    Parameters:
     ----------
     rule_data: dataframe 
         A Pandas DataFrame containing the rule data.
         
     existing_rule_data: dict 
-        a data frame containng all the records for a rule that already developed. It 
+        a data frame containing all the records for a rule that already developed. It 
         can be read from the existing rule folder using get_existing_rule. 
 
     Returns:

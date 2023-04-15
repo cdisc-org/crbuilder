@@ -4,6 +4,7 @@
 #   04/06/2023 (htu) - ported from proc_sdtm_rules as proc_rules module
 #   04/07/2023 (htu) - added r_standard and db_cfg 
 #   04/08/2023 (htu) - added log_cfg 
+#   04/14/2023 (htu) - added s_pub to select publisher for FDA_VR1_6 at Step 2.5
 #  
 
 import os
@@ -30,6 +31,7 @@ def proc_rules(r_standard,
                 out_rule_folder:str=None, 
                 rule_ids: list = ["CG0001"],s_version: list = [], 
                 s_class: list = [], s_domain: list = [],
+                s_pub: list = [],
                 wrt2log: int = 0, pub2db: int = 0,
                 get_db_rule: int = 0,
                 db_name:str=None, ct_name:str=None,
@@ -195,34 +197,50 @@ def proc_rules(r_standard,
     v_stp = 2.0 
     v_msg = f"Filtering and Grouping data..."
     echo_msg(v_prg, v_stp, v_msg,1)
+
+    def filter_df(s_msg, s_key, s_lst): 
+        num_sel = len(s_lst)
+        if num_sel > 0: 
+            df = df[df[s_key].isin(s_lst)]
+        num_df = df.shape[0]
+        v_s1 = ", ".join(s_lst)
+        v_s2 = f"{num_df}/{num_records_processed}"
+        v_msg = f"Select by {s_msg} IG ({num_sel}:{v_s1}): {v_s2} "
+        echo_msg(v_prg, v_stp, v_msg,2)
+
     
     # 2.1 select by standard version
     v_stp = 2.1 
     num_selected = len(s_version)
-    df = df_data if num_selected == 0 else df_data[
-        df_data["SDTMIG Version"].isin(s_version)]
+    df = df_data
+    if r_std == "SDTM_V2_0":
+        df = df_data[df_data["SDTMIG Version"].isin(s_version)]
     v_s1 = ", ".join(s_version)
-    v_s2 = f"{df.shape[0]}/{df_data.shape[0]}"
+    v_s2 = f"{df.shape[0]}/{num_records_processed}"
     v_msg = f"Select by IG Version ({num_selected}:{v_s1}): {v_s2} "
     echo_msg(v_prg, v_stp, v_msg,2)
 
     # 2.2 select by class
     v_stp = 2.2
     num_selected = len(s_class)
+    if r_std == "SDTM_V2_0":
+        df = df[df["Class"].isin(s_class)]
     num_df = df.shape[0]
-    df = df if num_selected == 0 else df[df["Class"].isin(s_class)]
     v_s1 = ", ".join(s_class)
-    v_s2 = f"{num_df}/{df.shape[0]}"
+    v_s2 = f"{num_df}/{num_records_processed}"
     v_msg = f"Select by IG Class ({num_selected}:{v_s1}): {v_s2} "
     echo_msg(v_prg, v_stp, v_msg, 2)
 
     # 2.3 select by domain 
     v_stp = 2.3
     num_selected = len(s_domain)
+    if r_std == "SDTM_V2_0":
+        df = df[df["Domain"].isin(s_domain)]
+    elif r_std == "FDA_VR1_6":
+        df = df[df["Domains"].isin(s_domain)]
     num_df = df.shape[0]
-    df = df if num_selected == 0 else df[df["Domain"].isin(s_domain)]
     v_s1 = ", ".join(s_domain)
-    v_s2 = f"{num_df}/{df.shape[0]}"
+    v_s2 = f"{num_df}/{num_records_processed}"
     v_msg = f"Select by IG Domain ({num_selected}:{v_s1}): {v_s2} "
     echo_msg(v_prg, v_stp, v_msg, 2)
 
@@ -234,6 +252,12 @@ def proc_rules(r_standard,
     v_msg = f" . Select by Rule IDs ({v_ids}): {df.shape[0]}"
     echo_msg(v_prg, v_stp, v_msg, 2)
 
+    # 2.5 select by Publisher 
+    v_stp = 2.5
+    num_selected = len(s_pub)
+    if r_std == "FDA_VR1_6":
+        filter_df('FDA Publisher', 'Publisher', s_pub)
+ 
     v_msg  = "INFO:Selected number of rules: " + str(df.shape[0])
     v_msg += "/" + str(num_records_processed)
     echo_msg(v_prg, v_stp, v_msg,2)
@@ -465,7 +489,7 @@ if __name__ == "__main__":
     # proc_sdtm_rules(rule_ids=["CG0063"], wrt2log=True,pub2db=1,db_name=db,ct_name=ct)
     # proc_sdtm_rules(rule_ids=[], wrt2log=True,pub2db=1,db_name=db,ct_name=ct)
 
-    # Publish to dev environme t
+    # Publish to dev environment t
     ct = 'editor_rules_dev'
     # proc_sdtm_rules(rule_ids=["CG0001","CG0015", "CG0063"], wrt2log=True, pub2db=1, 
     #                 get_db_rule=1, db_name=db, ct_name=ct)

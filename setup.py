@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="crbuilder",
-    version="0.4.1",
+    version="0.4.2",
     author="Hanming Tu",
     author_email="hanming.tu@gmail.com",
     description="A tool for building CDISC Core rules",
