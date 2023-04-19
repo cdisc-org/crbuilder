@@ -7,6 +7,7 @@
 #     10. Rule Type and Sensitivity should be left null
 #   03/22/2023 (htu) - added exist_rule_data
 #   04/10/2023 (htu) - added r_std input parameter 
+#   04/19/2023 (htu) - added echo_msg 
 #    
 
 import os
@@ -54,6 +55,10 @@ def get_sensitivity(rule_data, exist_rule_data: dict = {}, r_std:str=None):
         None
 
     """
+    v_prg = __name__
+    v_stp = 1.0 
+    v_msg = "Getting sensitivity..."
+    echo_msg(v_prg, v_stp, v_msg, 2)
  
     if rule_data.empty:
         return None
@@ -65,6 +70,7 @@ def get_sensitivity(rule_data, exist_rule_data: dict = {}, r_std:str=None):
     if r_str is not None:
         return r_str 
     
+    v_stp = 2.0 
     r_str = "Record"
     if r_std in ("SDTM_V2_0"):
         r_condition = rule_data.iloc[0]["Condition"]
@@ -79,8 +85,11 @@ def get_sensitivity(rule_data, exist_rule_data: dict = {}, r_std:str=None):
                 # Convert the matched keyword to lowercase and capitalize the first letter
                 r_str = match.group(1).lower().capitalize()
             else:
+                v_stp = 2.2
                 # No match found
-                print(f"No match found from {r_condition}")
+                v_msg = f"No match found from {r_condition}"
+                echo_msg(v_prg, v_stp, v_msg, 3)
+
     # End of if r_std in ("SDTM_V2_0")
 
     return r_str

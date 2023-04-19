@@ -16,8 +16,11 @@
 # python rulebuilder.py process --r_standard SDTM_V2_0 --r_ids "CG0155,CG0156" --ct_name editor_rules_dev --pub2db 1
 # python rulebuilder.py process --r_standard SDTM_V2_0 --r_ids "CG0017,CG0155,CG0156" --ct_name editor_rules_dev --pub2db 1
 # python rulebuilder.py process --r_standard SDTM_V2_0 --r_ids "CG0100,CG0143" --ct_name editor_rules_dev --pub2db 1
-# 
+# python rulebuilder.py process --r_standard FDA_VR1_6 --r_ids CT2001 --ct_name editor_rules_dev --msg_lvl 3
+# python rulebuilder.py process --r_standard FDA_VR1_6 --s_domain DM  --ct_name editor_rules_dev --msg_lvl 3
+# python rulebuilder.py process --r_standard SDTM_V2_0 --r_ids ALL  --ct_name editor_rules_dev --pub2db 1
 
+import os
 import click
 from rulebuilder.rbuilder import RuleBuilder
 
@@ -69,10 +72,12 @@ def get_doc_statistics(db_name, ct_name):
 @click.option('--get_db_rule', default=1, help='A flag indicating whether to get rules from a database.')
 @click.option('--db_name', default=None, help='The name of the database to use.')
 @click.option('--ct_name', default='core_rules_dev', help='The name of the container to use.')
+@click.option('--msg_lvl', default='1', help='The message level to be displayed on screen.')
 def process(r_standard:str=None, r_ids:str=None, s_version:str=None, 
             s_class:str=None, s_domain:str=None, s_pub:str=None,
             wrt2log:int=1, pub2db:int=1, 
-            get_db_rule:int=0, db_name:str=None, ct_name:str=None):
+            get_db_rule:int=0, db_name:str=None, ct_name:str=None,
+            msg_lvl=1):
     rb = RuleBuilder(r_standard=r_standard)
     if r_ids is None:
         if s_version is None and s_class is None and s_domain is None: 
@@ -88,6 +93,7 @@ def process(r_standard:str=None, r_ids:str=None, s_version:str=None,
     v_dos = [] if s_domain is None else [s.strip().upper() for s in s_domain.split(',')]
     v_pub = [] if s_pub is None else [s.strip().upper() for s in s_pub.split(',')]
     # print(f"Version: {len(v_ves)}: {v_ves}")
+    os.environ["g_msg_lvl"] = msg_lvl 
     rb.process(r_standard=r_standard, r_ids=v_ids, 
         s_version=v_ves, s_class=v_cls, s_domain=v_dos, s_pub=v_pub,
         wrt2log=wrt2log, pub2db=pub2db, get_db_rule=get_db_rule, 

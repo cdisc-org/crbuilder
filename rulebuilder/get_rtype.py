@@ -8,6 +8,7 @@
 #     10. Rule Type and Sensitivity should be left null
 #   03/22/2023 (htu) - added exist_rule_data
 #   04/10/2023 (htu) - added r_std 
+#   04/18/2023 (htu) - changed Rule_Type to "Rule Type"
 #    
 
 import re 
@@ -23,7 +24,7 @@ def get_rtype(rule_data, exist_rule_data: dict = {}, r_std:str=None):
     ===============
     get_rtype
     ===============
-    This method builds the json.Rule_Type element in the core rule.
+    This method builds the json."Rule Type" element in the core rule.
 
     Parameters:
     -----------
@@ -38,7 +39,7 @@ def get_rtype(rule_data, exist_rule_data: dict = {}, r_std:str=None):
 
     returns
     -------
-        r_str: a string for json.Rule_Type
+        r_str: a string for json."Rule Type"
         
         possible rule type: 
         - Dataset Contents Check against Define XML and Library Metadata
@@ -72,7 +73,7 @@ def get_rtype(rule_data, exist_rule_data: dict = {}, r_std:str=None):
     #     echo_msg(v_prg, v_stp, v_msg, 0)
     #     return None
 
-    r_str = exist_rule_data.get("json", {}).get("Rule_Type")
+    r_str = exist_rule_data.get("json", {}).get("Rule Type")
     if r_str is not None:
         return r_str
     

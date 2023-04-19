@@ -69,7 +69,7 @@ def get_db_documents (qry:str = None, db:str = 'library', ct:str = 'editor_rules
         try: 
             r_auth = i.get("json", {}).get("Authorities")
             r_ref = r_auth[0].get("Standards")[0].get("References")
-            rule_id = r_ref[0].get("Rule_Identifier", {}).get("Id")
+            rule_id = r_ref[0].get("Rule Identifier", {}).get("Id")
             if rule_id is None:
                rule_id = r_ref[0].get("Rule Identifier", {}).get("Id")
                if rule_id is not None:
@@ -119,7 +119,7 @@ def get_db_documents (qry:str = None, db:str = 'library', ct:str = 'editor_rules
 if __name__ == "__main__":
     # set input parameters
     os.environ["g_lvl"] = "5"
-    v_prg = __name__ + "::proc_sdtm_rules"
+    v_prg = __name__ + "::get_db_documents"
     # rule_list = ["CG0373", "CG0378", "CG0379"]
     rule_list = ["CG0001"]
     # rule_list = []

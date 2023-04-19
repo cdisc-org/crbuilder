@@ -13,6 +13,7 @@
 #     2. added deep_match 
 #     3. added step 4.32 to write out r_ids 
 #   04/14/2023 (htu) - added r_ids[r_id]["status"]
+#   04/18/2023 (htu) - added step 4.32
 #
 import os
 import re
@@ -131,7 +132,9 @@ def get_doc_stats(qry: str = None, db: str = 'library',
                 echo_msg(v_prg, v_stp, i, 9)
             r_auth = i.get("json", {}).get("Authorities")
             r_ref = r_auth[0].get("Standards")[0].get("References")
-            r_id = r_ref[0].get("Rule_Identifier", {}).get("Id")    # rule id 
+            r_id = r_ref[0].get("Rule Identifier", {}).get("Id")    # rule id 
+            if r_id is None: 
+                r_id = r_ref[0].get("Rule_Identifier", {}).get("Id")    # rule id 
         except Exception as e:
             v_stp = 4.12
             # print(f"I-Doc: {i}")
@@ -145,6 +148,8 @@ def get_doc_stats(qry: str = None, db: str = 'library',
             v_msg = "Still trying to get Rule ID..."
             echo_msg(v_prg, v_stp, v_msg, 4)
             r_id = r_ref[0].get("Rule Identifier", {}).get("Id")    # wrong way to have rule id 
+            if r_id is None: 
+                r_id = r_ref[0].get("Rule_Identifier", {}).get("Id")    # wrong way to have rule id 
             if r_id is not None:
                 if r_id not in r_key_with_space.keys():
                     r_key_with_space[r_id] = []
@@ -214,19 +219,28 @@ def get_doc_stats(qry: str = None, db: str = 'library',
         tm = dt.datetime.now()
         s_dir = tm.strftime("/%Y/%m/%d/")
         if job_id is None: 
-            job_id = tm.strftime("%Y%m%d_%H%M%S")
-        rst_fn = f"{log_dir}{s_dir}/{job_id}/job-{job_id}-stat.xlsx"
+            job_id = tm.strftime("J%H%M%S")
+        t_dir = f"{log_dir}{s_dir}/{job_id}"
+        if not os.path.exists(t_dir):
+            v_stp = 4.32
+            v_msg = f"Dir does not exist: {t_dir}"
+            echo_msg(v_prg, v_stp, v_msg, 3)
+            v_msg = f"Making dir - {t_dir}"
+            echo_msg(v_prg, v_stp, v_msg, 3)
+            os.makedirs(t_dir)
+
+        rst_fn = f"{t_dir}/job-{job_id}-stat.xlsx"
         jsn_fn = f"{log_dir}{s_dir}/{job_id}/job-{job_id}-stat.json"
         v_msg = "Output result to " + rst_fn + "..." 
         echo_msg(v_prg, v_stp, v_msg,2)
         df_log.to_excel(rst_fn, index=False)
-        v_stp = 4.32
+        v_stp = 4.33
         with open(jsn_fn, 'w') as f:
             v_msg = f"Writing to: {jsn_fn}"
             echo_msg(v_prg, v_stp, v_msg, 3)
             json.dump(r_ids, f, indent=4)
     else:
-        v_stp = 4.33
+        v_stp = 4.34
 
     n = len(r_ids)
     for i in r_ids:
@@ -243,10 +257,5 @@ def get_doc_stats(qry: str = None, db: str = 'library',
 if __name__ == "__main__":
     # set input parameters
     os.environ["g_lvl"] = "5"
-    v_prg = __name__ + "::proc_sdtm_rules"
-    # rule_list = ["CG0373", "CG0378", "CG0379"]
-    rule_list = ["CG0001"]
-    # rule_list = []
-    q1 = "select * from c where not is_defined(c.creator)"
-    q2 = "select * from c"
-    get_doc_stats()
+    v_prg = __name__ + "::get_doc_stats"
+    get_doc_stats(ct="editor_rules_dev_20230411",wrt2file=1)

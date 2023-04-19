@@ -6,6 +6,10 @@
 #   03/24/2023 (htu) - added set_scope sub function
 #   04/10/2023 (htu) - added r_std input parameter 
 #   04/12/2023 (htu) - added r_cst to get rule classes from get_rule_constants 
+#   04/17/2023 (htu) - 
+#     1. added check_required method
+#     2. added step 2.5 to add required components for scope 
+#   04/18/2023 (htu) - added code to remove empty string in set_scope
 #    
 
 
@@ -27,7 +31,18 @@ def get_scope(rule_data, exist_rule_data: dict = {}, r_std:str=None, r_cst = Non
     v_msg = f"Scope: {r_json}"
     echo_msg(v_prg, v_stp, v_msg, 8) 
 
+    def check_required (i_key, i_obj):
+        r_cs = i_obj[i_key]
+        v_msg = f"{i_key} Keys: {r_cs.keys()}"
+        echo_msg(v_prg, v_stp, v_msg, 4) 
+        if "Include" not in r_cs.keys() and "Exclude" not in r_cs.keys():
+            i_obj[i_key]["Include"] = []
+        return i_obj 
+
     if r_json is not None: 
+        v_stp = 1.1
+        r_json = check_required("Classes", r_json)
+        r_json = check_required("Domains", r_json)
         return r_json
 
     r_std = os.getenv("r_standard") if r_std is None else r_std
@@ -37,6 +52,11 @@ def get_scope(rule_data, exist_rule_data: dict = {}, r_std:str=None, r_cst = Non
         r_cst = get_rule_constants(r_std=r_std)
     v_cs = r_cst.get("Classes")
 
+
+    # 2.0 Build Classes and Domains for Scope
+    v_stp = 2.0 
+    v_msg = "Building classes and domains for scope..."
+    echo_msg(v_prg, v_stp, v_msg, 3)
     r_json = {
         "Classes": {},
         "Domains": {}
@@ -45,7 +65,7 @@ def get_scope(rule_data, exist_rule_data: dict = {}, r_std:str=None, r_cst = Non
     v_msg = f" . for {r_std} "
     if r_std in ("SDTM_V2_0"):
         v_stp = 2.1 
-        echo_msg(v_prg, v_stp, v_msg, 3) 
+        echo_msg(v_prg, v_stp, v_msg, 4) 
         
         df = decode_classes(df_rules) 
         # print(f"{__name__}:\n  Class: {df['Class']}\n  Domains: {df['Domain']}")
@@ -54,6 +74,8 @@ def get_scope(rule_data, exist_rule_data: dict = {}, r_std:str=None, r_cst = Non
         def set_scope (k, c1="Class", c2="Classes"):
             if df[c1].iloc[0] is not None:
                 v = list(set(chain.from_iterable(df[c1])))
+                if "" in v:
+                    v.remove("")
                 r_json[c2][k] = v
             else:
                 if k in r_json[c2]:
@@ -66,7 +88,7 @@ def get_scope(rule_data, exist_rule_data: dict = {}, r_std:str=None, r_cst = Non
         set_scope("Exclude", c1="Domains_Exclude", c2="Domains")
     elif r_std in ("FDA_VR1_6"):
         v_stp = 2.2
-        echo_msg(v_prg, v_stp, v_msg, 3) 
+        echo_msg(v_prg, v_stp, v_msg, 4) 
 
         # v_cs = ["INTERVENTIONS", "EVENTS", "FINDINGS", "FINDINGS ABOUT"]
         # v_str = "INTERVENTIONS, EVENTS, FINDINGS, FINDINGS ABOUT, SE, SM, SV, INTERVENTIONS, EVENTS, FINDINGS, FINDINGS ABOUT,CV, EG, FT, LB, MK, NV, OE, PC, PP, RE, UR, AE, CE, MH"
@@ -95,9 +117,16 @@ def get_scope(rule_data, exist_rule_data: dict = {}, r_std:str=None, r_cst = Non
 
         if len(in_cs) > 0: 
             r_json["Classes"]["Include"] = in_cs
+        else:
+            r_json["Classes"]["Include"] = []
         if len(not_in_cs) > 0: 
             r_json["Domains"]["Include"] = not_in_cs
-
+        else:
+           r_json["Domains"]["Include"] = []
+    
+    v_stp = 2.5 
+    r_json = check_required("Classes", r_json)
+    r_json = check_required("Domains", r_json)
 
     return r_json
 

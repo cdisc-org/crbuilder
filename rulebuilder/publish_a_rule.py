@@ -8,6 +8,10 @@
 #     2. added step 4.1 to backup docs before replacing it 
 #   04/07/2023 (htu) - added get_db_rule 
 #   04/13/2023 (htu) - commented out step 4.112 (no deduplication)
+#   04/18/2023 (htu) - 
+#     1. added checking for dat_fdir as rule_dir 
+#     2. changed Rule_Identifier back to "Rule Identifier"
+#     3. added r_json parameter and removed get_db_rule
 #
 
 import os
@@ -21,7 +25,7 @@ from azure.cosmos.exceptions import CosmosResourceNotFoundError
 
 
 def publish_a_rule(rule_id = None, doc_id:str=None, rule_dir:str=None, 
-                   db_cfg = None, r_ids = None, get_db_rule:int=0):
+                   db_cfg = None, r_ids = None, r_json= None):
     """
     Publishes a rule to a Cosmos DB container.
 
@@ -44,11 +48,14 @@ def publish_a_rule(rule_id = None, doc_id:str=None, rule_dir:str=None,
     log_fn = os.getenv("log_fn") 
     v_msg = "Getting existing rule..."
     echo_msg(v_prg, v_stp, v_msg, 2)
+    load_dotenv()
 
     # 1.1 check rul_json_dir 
     v_stp = 1.1
     if rule_dir is None:
-        load_dotenv()
+        output_dir = os.getenv("dat_fdir")
+        rule_dir = output_dir + "/rules_json"
+    if rule_dir is None:
         rule_dir = os.getenv("rule_json_dir")
     if rule_dir is None:
         output_dir = os.getenv("output_dir")
@@ -80,7 +87,8 @@ def publish_a_rule(rule_id = None, doc_id:str=None, rule_dir:str=None,
     v_stp = 2.0 
     v_msg = "Get json document based on rule_id or doc_id..."
     echo_msg(v_prg, v_stp, v_msg, 3)
-    r_json = read_fn_rule(rule_id=rule_id, doc_id=doc_id, 
+    if r_json is None: 
+        r_json = read_fn_rule(rule_id=rule_id, doc_id=doc_id, 
                          rule_dir=rule_dir)
 
     # 3.0 publish the document 
@@ -113,7 +121,7 @@ def publish_a_rule(rule_id = None, doc_id:str=None, rule_dir:str=None,
               "publish_status": None}
     r_auth = r_json.get("json", {}).get("Authorities")
     r_ref = r_auth[0].get("Standards")[0].get("References")
-    r_id = r_ref[0].get("Rule_Identifier",{}).get("Id")
+    r_id = r_ref[0].get("Rule Identifier",{}).get("Id")
     core_status = r_json.get("json", {}).get("Core", {}).get("Status")
     df_row.update({"rule_id": r_id})
     df_row.update({"core_id": core_id} )
@@ -129,9 +137,12 @@ def publish_a_rule(rule_id = None, doc_id:str=None, rule_dir:str=None,
     # print(r_json["json"]) 
     # for authority in r_json['json']['Authorities']: 
     for authority in r_auth: 
-        for standard in authority['Standards']:
-            v_vs.append(standard['Version'])
-    v_vers = ", ".join(v_vs)
+        for standard in authority.get('Standards'):
+            v_1 = standard.get('Version')
+            if v_1 is not None: 
+                v_vs.append(v_1)
+    if len(v_vs) > 0: 
+        v_vers = ", ".join(v_vs)
     df_row.update({"version": v_vers})
 
     # 4.0 add or replace document

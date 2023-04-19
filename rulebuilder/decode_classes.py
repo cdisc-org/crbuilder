@@ -100,10 +100,8 @@ def decode_classes(df_data, df_map = None):
                 df.iloc[i]["Domain"] = ["ALL"]
                 df.iloc[i]["Classes_Exclude"] = [df_map["fa"].get(k2)]
                 r_bool = True
-
-        
         return r_bool 
-
+    # End of def proc_ap_fa
 
     def dc_class(k) :
         x = k.strip()
@@ -142,7 +140,7 @@ def decode_classes(df_data, df_map = None):
             if v_typ == "domain":
                 df.iloc[i]['Domain'] = s_list.tolist()
 
-        # End of proc_exclude 
+    # End of def proc_exclude 
 
     # 3. add two columns in df
 

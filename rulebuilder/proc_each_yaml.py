@@ -7,6 +7,7 @@
 #     2. updated calling to get_existing_rule parameters in Step 1.3
 #   04/07/2023 (htu) - used echo_msg to display dict datasets 
 #   04/10/2023 (htu) - added r_std and r_cst input parameters 
+#   04/18/2023 (htu) - changed Rule_Type to "Rule Type" in step 2.8 
 #    
 
 import os 
@@ -124,8 +125,15 @@ def proc_each_yaml (rule_id:str=None,rule_data = None, rule_obj = None,
  
     # c1 = yaml.safe_load(rule_obj.get("content"))
     c0 = rule_obj.get("content")
-    c1 = {} if c0 is None else y1.load(c0)
-    
+    c1 = {}
+    try: 
+        if c0 is not None: 
+            c1 = y1.load(c0)
+    except Exception as e:
+        v_stp = 2.11
+        v_msg = f"Error: {e}"
+        echo_msg(v_prg, v_stp, v_msg, 1)
+        echo_msg(v_prg, v_stp, c0, 5)
     v_msg = "---------- Existing Rule Content (C1) ----------"
     echo_msg(v_prg, v_stp, v_msg, 9)
     echo_msg(v_prg, v_stp, c1, 9)
@@ -234,10 +242,10 @@ def proc_each_yaml (rule_id:str=None,rule_data = None, rule_obj = None,
     v_msg = "Get Rule Type..."
     echo_msg(v_prg, v_stp, v_msg, 4)
 
-    # # get json Rule_Type
+    # # get json Rule Type
     # rule_obj["json"]["Rule_Type"] = get_rtype(
     #     rule_data, exist_rule_data=rule_obj)
-    y2["Rule_Type"] = get_rtype(
+    y2["Rule Type"] = get_rtype(
          rule_data, exist_rule_data=rule_obj,r_std=r_std)
 
     # 2.9 get Sensitivity

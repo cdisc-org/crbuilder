@@ -5,6 +5,7 @@
 #   04/07/2023 (htu) - used getenv to get job_id and sub_dir
 #   04/10/2023 (htu) - removed some redundant codes 
 #   04/14/2023 (htu) - added create_dir method and simplified the coding 
+#   04/18/2023 (htu) - added dat_fdir 
 #
 
 import os 
@@ -77,10 +78,14 @@ def create_log_dir(log_dir: str = None, job_id: str = None,
     create_dir(2.1, log_dir)
 
     log_fdir = f"{log_dir}{sub_dir}/logs"
+    dat_fdir = f"{log_dir}{sub_dir}/data"
+    os.environ["dat_fdir"] = dat_fdir
     create_dir(2.2, log_fdir)
-
+    create_dir(2.3, dat_fdir)
+     
     r_cfg["log_fdir"] = log_fdir
-    
+    r_cfg["dat_fdir"] = dat_fdir
+
     fn=f"{fn_root}-{job_id}.{fn_suffix}"
     r_cfg["file_name"]=fn
     r_cfg["fn_path"]=f"{log_fdir}/{fn}"
@@ -96,9 +101,9 @@ def create_log_dir(log_dir: str = None, job_id: str = None,
     if e_rule_dir is not None:
         create_dir(3.1, e_rule_dir)
     if j_rule_dir is not None:
-        create_dir(3.1, j_rule_dir)
+        create_dir(3.2, j_rule_dir)
     if output_dir is not None:
-        create_dir(3.1, output_dir)
+        create_dir(3.3, output_dir)
     
     return r_cfg
 

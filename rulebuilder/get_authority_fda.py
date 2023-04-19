@@ -94,7 +94,7 @@ def get_authority_fda(rule_data, rule_obj=None, r_std: str = None, rule_constant
         rule_id = row.get("Rule ID")
         v_docum = row.get("Publisher")
         v_cited = row.get("Publisher ID")
-        r_a_cit = {"Cited_Guidance": v_cited, "Document": v_docum}
+        r_a_cit = {"Cited Guidance": v_cited, "Document": v_docum}
 
         for j in v_vs: 
             v_ig_version = re.sub(r'([G|R|T])(\d)', r'\1 \2', j)
@@ -113,7 +113,7 @@ def get_authority_fda(rule_data, rule_obj=None, r_std: str = None, rule_constant
 
                 # 2.2 append citation
                 v_stp = 2.2
-                r_a_cit = {"Cited_Guidance": v_cited, "Document": v_docum}
+                r_a_cit = {"Cited Guidance": v_cited, "Document": v_docum}
                 # if not v_item:  # Check if "Item" is empty
                 #    del r_a_cit["Item"]  # Remove "Item" key from r_a_cit dictionary
                 r_cits.append(r_a_cit)
@@ -126,9 +126,9 @@ def get_authority_fda(rule_data, rule_obj=None, r_std: str = None, rule_constant
                 v_rule_version = row.get("Rule Version")
                 if v_rule_version is None: 
                     v_rule_version = r_cst.get("Authorities").get(
-                        "Standard.References.Rule_Identifier.Version")
+                        "Standard.References.Rule Identifier.Version")
                 r_a_ref = {"Origin": v_orig,
-                   "Rule_Identifier": {
+                   "Rule Identifier": {
                        "Id": rule_id,
                        "Version": v_rule_version
                    },

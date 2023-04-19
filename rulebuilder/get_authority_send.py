@@ -85,7 +85,7 @@ def get_authority_send(rule_data, exist_rule_data, r_std:str=None):
         v_sdtmig_version = row.get("SDTMIG Version")
         v_msg = f"  {i:02d} Rule ID - {rule_id}: {v_sdtmig_version}"
         echo_msg(v_prg, v_stp, v_msg,4)
-        r_a_cit = {"Cited_Guidance": row.get("Cited Guidance"),
+        r_a_cit = {"Cited Guidance": row.get("Cited Guidance"),
                    "Document": row.get("Document"),
                    "Item": v_item,
                    "Section": row.get("Section")
@@ -104,7 +104,7 @@ def get_authority_send(rule_data, exist_rule_data, r_std:str=None):
         # print(f"Row {i}: {r_a_cit}") 
         v_rule_version = row.get("Rule Version")
         r_a_ref = {"Origin": "SDTM and SDTMIG Conformance Rules",
-                   "Rule_Identifier": {
+                   "Rule Identifier": {
                        "Id": rule_id,
                        "Version": v_rule_version
                    },

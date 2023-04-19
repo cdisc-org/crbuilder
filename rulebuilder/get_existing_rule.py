@@ -11,6 +11,10 @@
 #   04/07/2023 (htu) - added steps 2.11 and 2.12 to back up the rule read from the DB
 #   04/11/2023 (htu) - added step 2.13
 #   04/12/2023 (htu) - added step 2.14 to backup to YAML file
+#   04/18/2023 (htu) - 
+#     1. changed output from in_rule_folder to bak_docs and json_rule_dir to bak_rule
+#     2. added steps 2.111, 2.112, and 2.113
+#     3. added doc_id 
 #    
 
 import os
@@ -27,7 +31,7 @@ from rulebuilder.read_fn_rule import read_fn_rule
 from rulebuilder.read_db_rule import read_db_rule
 
 
-def get_existing_rule(rule_id, in_rule_folder, 
+def get_existing_rule(rule_id = None, in_rule_folder = None, doc_id = None, 
                       get_db_rule:int = 0, db_cfg = None, r_ids = None, 
                       db_name:str=None, ct_name:str=None,
                       use_yaml_content:bool=True):
@@ -52,7 +56,9 @@ def get_existing_rule(rule_id, in_rule_folder,
     echo_msg(v_prg, v_stp, v_msg, 2)
     if in_rule_folder is None:
         in_rule_folder = os.getenv("existing_rule_dir")
-    json_rule_dir = os.getenv("json_rule_dir")
+    # json_rule_dir = os.getenv("json_rule_dir")
+    bak_docs = os.getenv("dat_fdir") + "/orig_docs"
+    bak_rule = os.getenv("dat_fdir") + "/orig_rule"
 
     # 2 get json data either from db or rule folder
     v_stp = 2.0
@@ -60,34 +66,47 @@ def get_existing_rule(rule_id, in_rule_folder,
         v_stp = 2.1
         v_msg = f"Getting rule doc from {db_name}.{ct_name}..."
         echo_msg(v_prg, v_stp, v_msg, 3)
-        json_data = read_db_rule(rule_id=rule_id, db_cfg=db_cfg,r_ids=r_ids,
+        json_data = read_db_rule(doc_id = doc_id, rule_id=rule_id, 
+                                 db_cfg=db_cfg,r_ids=r_ids,
                                  db_name=db_name,ct_name=ct_name)
-        v_stp = 2.11
+        v_stp = 2.111
         if not os.path.exists(in_rule_folder):
             v_msg = "Making dir - " + in_rule_folder
             echo_msg(v_prg, v_stp, v_msg, 3)
             os.makedirs(in_rule_folder)
+
+        v_stp = 2.112
+        if not os.path.exists(bak_docs):
+            v_msg = "Making dir - " + bak_docs
+            echo_msg(v_prg, v_stp, v_msg, 3)
+            os.makedirs(bak_docs)
+
+        v_stp = 2.113
+        if not os.path.exists(bak_rule):
+            v_msg = "Making dir - " + bak_rule
+            echo_msg(v_prg, v_stp, v_msg, 3)
+            os.makedirs(bak_rule)
 
         v_stp = 2.12
         doc_id = json_data.get("id")
         v_status = json_data.get(
             "json", {}).get("Core", {}).get("Status")
         ofn = f"{rule_id}-new" if v_status is None else f"{rule_id}-{v_status}"
-        fn1 = f"{in_rule_folder}/{ofn}.json"
+        fn1 = f"{bak_rule}/{ofn}.json"
         v_msg = f"FN1: Backing up the rule to {fn1}..."
         echo_msg(v_prg, v_stp, v_msg, 3)
         with open(fn1, 'w') as f:
             json.dump(json_data, f, indent=4)
 
         v_stp = 2.13
-        fn2 = f"{json_rule_dir}/{doc_id}.json"
+        fn2 = f"{bak_docs}/{doc_id}.json"
         v_msg = f"FN2: Backing up the rule to {fn2}..."
         echo_msg(v_prg, v_stp, v_msg, 3)
         with open(fn2, 'w') as f:
             json.dump(json_data, f, indent=4)
 
         v_stp = 2.14
-        fn3 = f"{json_rule_dir}/{doc_id}.yaml"
+        fn3 = f"{bak_docs}/{doc_id}.yaml"
         v_msg = f"FN3: Backing up the rule to {fn3}..."
         echo_msg(v_prg, v_stp, v_msg, 3)
         yaml_data = yaml.dump(json_data, default_flow_style=False)
@@ -140,8 +159,16 @@ def get_existing_rule(rule_id, in_rule_folder,
     v_stp = 3.3 
     v_msg = "V Content Obj Type: " + str(type(v_c)) 
     echo_msg(v_prg, v_stp, v_msg, 5)
+    y_content = {}
+    try:
+        if v_c is not None:  
+            y_content = yaml_loader.load(v_c)
+    except Exception as e:
+        v_stp = 3.32
+        v_msg = f"Error: {e}"
+        echo_msg(v_prg, v_stp, v_msg, 1)
+        echo_msg(v_prg, v_stp, v_c, 5)
 
-    y_content = {} if v_c is None else yaml_loader.load(v_c)
     v_stp = 3.4 
     v_msg = "Y Content Obj Type: " + str(type(y_content))
     echo_msg(v_prg, v_stp, v_msg, 5)

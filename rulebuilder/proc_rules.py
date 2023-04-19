@@ -5,18 +5,22 @@
 #   04/07/2023 (htu) - added r_standard and db_cfg 
 #   04/08/2023 (htu) - added log_cfg 
 #   04/14/2023 (htu) - added s_pub to select publisher for FDA_VR1_6 at Step 2.5
+#   04/17/2023 (htu) - added filter_df method to simplify the record filtering 
+#   04/18/2023 (htu) - 
+#     1. changed step 3.7 so it will output to dat_fdir 
+#     2. added rename_keys at step 3.7 
+#     3. added r_json in publish_a_rule 
 #  
 
 import os
 import re 
-import sys 
-import json 
 import pandas as pd
 import datetime as dt 
 from dotenv import load_dotenv
 from rulebuilder.echo_msg import echo_msg
 from rulebuilder.read_rules import read_rules
 from rulebuilder.get_db_cfg import get_db_cfg
+from rulebuilder.rename_keys import rename_keys
 from rulebuilder.get_doc_stats import get_doc_stats
 from rulebuilder.proc_each_yaml import proc_each_yaml
 from rulebuilder.create_log_dir import create_log_dir
@@ -198,15 +202,16 @@ def proc_rules(r_standard,
     v_msg = f"Filtering and Grouping data..."
     echo_msg(v_prg, v_stp, v_msg,1)
 
-    def filter_df(s_msg, s_key, s_lst): 
+    def filter_df(s_msg, s_key, s_lst, local_df): 
         num_sel = len(s_lst)
         if num_sel > 0: 
-            df = df[df[s_key].isin(s_lst)]
-        num_df = df.shape[0]
+            local_df = local_df[local_df[s_key].isin(s_lst)]
+        num_df = local_df.shape[0]
         v_s1 = ", ".join(s_lst)
         v_s2 = f"{num_df}/{num_records_processed}"
         v_msg = f"Select by {s_msg} IG ({num_sel}:{v_s1}): {v_s2} "
         echo_msg(v_prg, v_stp, v_msg,2)
+        return local_df
 
     
     # 2.1 select by standard version
@@ -214,49 +219,60 @@ def proc_rules(r_standard,
     num_selected = len(s_version)
     df = df_data
     if r_std == "SDTM_V2_0":
-        df = df_data[df_data["SDTMIG Version"].isin(s_version)]
-    v_s1 = ", ".join(s_version)
-    v_s2 = f"{df.shape[0]}/{num_records_processed}"
-    v_msg = f"Select by IG Version ({num_selected}:{v_s1}): {v_s2} "
-    echo_msg(v_prg, v_stp, v_msg,2)
+        df = filter_df(s_msg="IG Version", s_key="SDTMIG Version",
+                       s_lst=s_version, local_df=df)
+    #     df = df_data[df_data["SDTMIG Version"].isin(s_version)]
+    # v_s1 = ", ".join(s_version)
+    # v_s2 = f"{df.shape[0]}/{num_records_processed}"
+    # v_msg = f"Select by IG Version ({num_selected}:{v_s1}): {v_s2} "
+    # echo_msg(v_prg, v_stp, v_msg,2)
 
     # 2.2 select by class
     v_stp = 2.2
-    num_selected = len(s_class)
     if r_std == "SDTM_V2_0":
-        df = df[df["Class"].isin(s_class)]
-    num_df = df.shape[0]
-    v_s1 = ", ".join(s_class)
-    v_s2 = f"{num_df}/{num_records_processed}"
-    v_msg = f"Select by IG Class ({num_selected}:{v_s1}): {v_s2} "
-    echo_msg(v_prg, v_stp, v_msg, 2)
+        df = filter_df(s_msg="Class", s_key="Class", s_lst=s_class, local_df=df)
+    # num_selected = len(s_class)
+    # if r_std == "SDTM_V2_0":
+    #     df = df[df["Class"].isin(s_class)]
+    # num_df = df.shape[0]
+    # v_s1 = ", ".join(s_class)
+    # v_s2 = f"{num_df}/{num_records_processed}"
+    # v_msg = f"Select by IG Class ({num_selected}:{v_s1}): {v_s2} "
+    # echo_msg(v_prg, v_stp, v_msg, 2)
 
     # 2.3 select by domain 
     v_stp = 2.3
+    # df = filter_df(s_msg="Class", s_key="Class", s_lst=s_class, local_df=df)
     num_selected = len(s_domain)
     if r_std == "SDTM_V2_0":
-        df = df[df["Domain"].isin(s_domain)]
+        # df = df[df["Domain"].isin(s_domain)]
+        df = filter_df(s_msg="SDTM Domains", s_key="Domain",
+                       s_lst=s_domain, local_df=df)
     elif r_std == "FDA_VR1_6":
-        df = df[df["Domains"].isin(s_domain)]
-    num_df = df.shape[0]
-    v_s1 = ", ".join(s_domain)
-    v_s2 = f"{num_df}/{num_records_processed}"
-    v_msg = f"Select by IG Domain ({num_selected}:{v_s1}): {v_s2} "
-    echo_msg(v_prg, v_stp, v_msg, 2)
+        # df = df[df["Domains"].isin(s_domain)]
+        df = filter_df(s_msg="FDA Domains", s_key="Domains",
+                       s_lst=s_domain, local_df=df)
+    # num_df = df.shape[0]
+    # v_s1 = ", ".join(s_domain)
+    # v_s2 = f"{num_df}/{num_records_processed}"
+    # v_msg = f"Select by IG Domain ({num_selected}:{v_s1}): {v_s2} "
+    # echo_msg(v_prg, v_stp, v_msg, 2)
 
     # 2.4 select by rule ids
     v_stp = 2.4
-    num_selected = len(rule_ids)
-    df = df if num_selected == 0 else df[df["Rule ID"].isin(rule_ids)]
-    v_ids = ", ".join(rule_ids)
-    v_msg = f" . Select by Rule IDs ({v_ids}): {df.shape[0]}"
-    echo_msg(v_prg, v_stp, v_msg, 2)
+    df = filter_df(s_msg="Rule ID", s_key="Rule ID",
+                   s_lst=rule_ids, local_df=df)
+    # num_selected = len(rule_ids)
+    # df = df if num_selected == 0 else df[df["Rule ID"].isin(rule_ids)]
+    # v_ids = ", ".join(rule_ids)
+    # v_msg = f" . Select by Rule IDs ({v_ids}): {df.shape[0]}"
+    # echo_msg(v_prg, v_stp, v_msg, 2)
 
     # 2.5 select by Publisher 
     v_stp = 2.5
-    num_selected = len(s_pub)
     if r_std == "FDA_VR1_6":
-        filter_df('FDA Publisher', 'Publisher', s_pub)
+        df = filter_df(s_msg='FDA Publisher', 
+                       s_key='Publisher', s_lst=s_pub, local_df=df)
  
     v_msg  = "INFO:Selected number of rules: " + str(df.shape[0])
     v_msg += "/" + str(num_records_processed)
@@ -336,110 +352,133 @@ def proc_rules(r_standard,
         # rule_data = df_selected[df_data["Rule ID"] == rule_id]
         rule_data = df[df["Rule ID"] == rule_id]
         rule_data = rule_data.reset_index(drop=True)
+        d_cnt = 0 
+        doc_ids = r_ids.get(rule_id, {}).get("ids")
+        d_len = 0 if doc_ids is None else len(doc_ids)
 
-        # 3.4 read in the existing rule
-        v_stp = 3.4 
-        rule_obj = get_existing_rule(rule_id, in_rule_folder, 
-                                     get_db_rule=get_db_rule, r_ids=r_ids,
-                                     db_name=db_name,ct_name=ct_name,
-                                     db_cfg=db_cfg,
-                                     use_yaml_content=False)
-        echo_msg(v_prg, v_stp, rule_obj, 9)
-        # json.dump(rule_obj, sys.stdout, indent=4)
+        def proc_each_rule ():
+            # 3.4 read in the existing rule
+            v_stp = 3.4
+            v_msg = f"  . {d_cnt}/{d_len} getting document - {doc_id} for {rule_id}..."
+            if d_len > 1: 
+                print(v_msg)
+            echo_msg(v_prg, v_stp, v_msg, 2)
+            rule_obj = get_existing_rule(rule_id, in_rule_folder,
+                                         doc_id=doc_id,
+                                         get_db_rule=get_db_rule, r_ids=r_ids,
+                                         db_name=db_name, ct_name=ct_name,
+                                         db_cfg=db_cfg,
+                                         use_yaml_content=False)
+            echo_msg(v_prg, v_stp, rule_obj, 9)
+            # json.dump(rule_obj, sys.stdout, indent=4)
 
-        # 3.5 process the rule 
-        # 
-        # a_json = proc_each_sdtm_rule(
-        #     rule_data, rule_obj, rule_id, in_rule_folder, cnt_published)
-        v_stp = 3.5 
-        a_json = proc_each_yaml(rule_id,rule_data, rule_obj=rule_obj,
-                                rule_dir=in_rule_folder,r_ids=r_ids,
-                                get_db_rule=get_db_rule,db_name=db_name,ct_name=ct_name)
-        a = a_json 
-        r_status = a.get("status")
-        if r_status is None or r_status != "new":
-            r_status = a.get("json", {}).get("Core", {}).get("Status")
-        row.update({"core_id": a.get("json",{}).get("Core",{}).get("Id")})
-        row.update({"user_id": a.get("creator",{}).get("id")})
-        row.update({"guid_id": a.get("id")})
-        row.update({"created": a.get("created")})
-        row.update({"changed": a.get("changed")})
-        row.update({"rule_status": r_status})
-        row.update({"rule_type": a.get("json", {}).get("Rule_Type")})
-        row.update({"sensitivity": a.get(
-            "json", {}).get("Sensitivity")})
+            # 3.5 process the rule
+            #
+            # a_json = proc_each_sdtm_rule(
+            #     rule_data, rule_obj, rule_id, in_rule_folder, cnt_published)
+            v_stp = 3.5
+            a_json = proc_each_yaml(rule_id, rule_data, rule_obj=rule_obj,
+                                    rule_dir=in_rule_folder, r_ids=r_ids,
+                                    get_db_rule=get_db_rule, db_name=db_name, ct_name=ct_name)
+            a = a_json
+            r_status = a.get("status")
+            if r_status is None or r_status != "new":
+                r_status = a.get("json", {}).get("Core", {}).get("Status")
+            row.update(
+                {"core_id": a.get("json", {}).get("Core", {}).get("Id")})
+            row.update({"user_id": a.get("creator", {}).get("id")})
+            row.update({"guid_id": a.get("id")})
+            row.update({"created": a.get("created")})
+            row.update({"changed": a.get("changed")})
+            row.update({"rule_status": r_status})
+            row.update({"rule_type": a.get("json", {}).get("Rule Type")})
+            row.update({"sensitivity": a.get(
+                "json", {}).get("Sensitivity")})
 
-        v_r_v1 = None 
-        v_r_v2 = None
-        v_r_d1 = None
-        v_r_s1 = None
-        v_c = None
-        v_d = None 
-
-        if r_std in ("SDTM_V2_0"):
-            v_r_v1 = rule_data["SDTMIG Version"].str.cat(sep="; ")
-            v_classes = list(
-                set([c for classes in rule_data['Class'] for c in classes]))
-            v_c = ", ".join(v_classes)
-            v_doms = list(
-                set([d for doms in rule_data['Domain'] for d in doms]))
-            v_d = ", ".join(v_doms)
-            v_r_v2 = rule_data["Variable"].str.cat(sep = "; ")
-            v_r_d1 = rule_data["Document"].str.cat(sep = "; ")
-            v_r_s1 = rule_data["Section"].str.cat(sep = "; ")
-        elif r_std in ("FDA_VR1_6"):
-            r_cst = get_rule_constants(r_std)
-            v_vs = r_cst.get("VS")
-            # print(f"V_Vs ------------- : {v_vs}")
             v_r_v1 = None
-            for j in v_vs:
-                v_ig_version = re.sub(r'([G|R|T])(\d)', r'\1 \2', j)
-                if v_r_v1 is None:
-                    v_r_v1 = v_ig_version
-                else:
-                    if v_ig_version is not None:
-                        v_r_v1 += "," + v_ig_version
-            v_c = a.get("json",{}).get("Scope",{}).get(
-                "Classes",{}).get("Include")
-            v_d = a.get("json", {}).get("Scope", {}).get(
-                "Domains", {}).get("Include")
- 
-        # end of if r_std in ("SDTM_V2_0")
-        row.update({"version": v_r_v1})
-        row.update({"class": v_c  })
-        row.update({"domain": v_d })
-        row.update({"variable": v_r_v2})
-        row.update({"document": v_r_d1})
-        row.update({"section": v_r_s1})
-        # Append row to list of rows
+            v_r_v2 = None
+            v_r_d1 = None
+            v_r_s1 = None
+            v_c = None
+            v_d = None
 
-        # 3.6 build yaml content
-        a_json["content"] = None 
-        # # Only get json for YAML
-        # dict_yaml = a_json["json"]
-        # print(f"Dict Keys: {dict_yaml.keys()}")
-        # # Replace "_" with " " for columns
-        # d_yaml = rename_keys(dict_yaml, '_', ' ')
-        # a_yaml = yaml.dump(d_yaml, default_flow_style=False)
-        a_yaml = build_rule_yaml(rule_data,a_json)
+            if r_std in ("SDTM_V2_0"):
+                v_r_v1 = rule_data["SDTMIG Version"].str.cat(sep="; ")
+                v_classes = list(
+                    set([c for classes in rule_data['Class'] for c in classes]))
+                v_c = ", ".join(v_classes)
+                v_doms = list(
+                    set([d for doms in rule_data['Domain'] for d in doms]))
+                v_d = ", ".join(v_doms)
+                v_r_v2 = rule_data["Variable"].str.cat(sep="; ")
+                v_r_d1 = rule_data["Document"].str.cat(sep="; ")
+                v_r_s1 = rule_data["Section"].str.cat(sep="; ")
+            elif r_std in ("FDA_VR1_6"):
+                r_cst = get_rule_constants(r_std)
+                v_vs = r_cst.get("VS")
+                # print(f"V_Vs ------------- : {v_vs}")
+                v_r_v1 = None
+                for j in v_vs:
+                    v_ig_version = re.sub(r'([G|R|T])(\d)', r'\1 \2', j)
+                    if v_r_v1 is None:
+                        v_r_v1 = v_ig_version
+                    else:
+                        if v_ig_version is not None:
+                            v_r_v1 += "," + v_ig_version
+                v_c = a.get("json", {}).get("Scope", {}).get(
+                    "Classes", {}).get("Include")
+                v_d = a.get("json", {}).get("Scope", {}).get(
+                    "Domains", {}).get("Include")
 
-        # 3.7 output the rule to json and yaml files
-        output_rule2file(rule_id, a_json, a_yaml, out_rule_folder)
+            # end of if r_std in ("SDTM_V2_0")
+            row.update({"version": v_r_v1})
+            row.update({"class": v_c})
+            row.update({"domain": v_d})
+            row.update({"variable": v_r_v2})
+            row.update({"document": v_r_d1})
+            row.update({"section": v_r_s1})
+            # Append row to list of rows
 
-        # 3.8 publish the rule 
-        if pub2db == 1:
-            a_row= publish_a_rule(rule_id=rule_id,db_cfg=db_cfg,r_ids=r_ids)
-            row.update({"publish_status": a_row["publish_status"]})
-        else:
-            row.update({"publish_status": "Not published"})
+            # 3.6 build yaml content
+            a_json["content"] = None
+            # # Only get json for YAML
+            # dict_yaml = a_json["json"]
+            # print(f"Dict Keys: {dict_yaml.keys()}")
+            # # Replace "_" with " " for columns
+            # d_yaml = rename_keys(dict_yaml, '_', ' ')
+            # a_yaml = yaml.dump(d_yaml, default_flow_style=False)
+            a_yaml = build_rule_yaml(rule_data, a_json)
 
-        # 3.9 Append the status record to rows
-        rows.append(row)
-        et_row = dt.datetime.now()
-        st = st_row.strftime("%Y-%m-%d %H:%M:%S")
-        et = et_row.strftime("%Y-%m-%d %H:%M:%S")
-        v_msg = f"The job {job_id} for {rule_id} was done between: {st} and {et}"
-        echo_msg(v_prg, v_stp, v_msg,2)
+            # 3.7 output the rule to json and yaml files
+            # output_rule2file(rule_id, a_json, a_yaml, out_rule_folder)
+            rename_keys(a_json, ' ', '_')
+            a_json["content"] = a_yaml
+            output_rule2file(rule_id, a_json, a_yaml)
+
+            # 3.8 publish the rule
+            if pub2db == 1:
+                a_row = publish_a_rule(r_json=a_json, 
+                    rule_id=rule_id, db_cfg=db_cfg, r_ids=r_ids)
+                row.update({"publish_status": a_row["publish_status"]})
+            else:
+                row.update({"publish_status": "Not published"})
+
+            # 3.9 Append the status record to rows
+            rows.append(row)
+            et_row = dt.datetime.now()
+            st = st_row.strftime("%Y-%m-%d %H:%M:%S")
+            et = et_row.strftime("%Y-%m-%d %H:%M:%S")
+            v_msg = f"The job {job_id} for {rule_id} was done between: {st} and {et}"
+            echo_msg(v_prg, v_stp, v_msg, 2)
+        # End of def proc_each_rule 
+        if d_len == 0:
+            doc_id = None
+            proc_each_rule()
+        else:  
+            for doc_id in doc_ids: 
+                d_cnt += 1 
+                proc_each_rule()
+        # End of for doc_id in r_ids.get(rule_id).get("ids")
 
     # End of for rule_id, group in grouped_data
 
@@ -468,7 +507,7 @@ def proc_rules(r_standard,
 if __name__ == "__main__":
     # set input parameters 
     os.environ["g_lvl"] = "5"
-    v_prg = __name__ + "::proc_sdtm_rules"
+    v_prg = __name__ + "::proc_rules"
     # rule_list = ["CG0373", "CG0378", "CG0379"]
     rule_list = ["CG0001"]
     # rule_list = []
@@ -477,8 +516,8 @@ if __name__ == "__main__":
     v_stp = 1.0 
     echo_msg(v_prg, v_stp, "Test Case 01: Basic Parameter",1)
 
-    # proc_sdtm_rules(rule_ids=["CG0006"], wrt2log=True)
-    # proc_sdtm_rules(rule_ids=["CG0006"], wrt2log=True)
+    # proc_rules(rule_ids=["CG0006"], wrt2log=True)
+    # proc_rules(rule_ids=["CG0006"], wrt2log=True)
     
     # Expected output:
     # 2. Test publishing rules 
@@ -486,15 +525,15 @@ if __name__ == "__main__":
     echo_msg(v_prg, v_stp, "Test Case 02: Publish Rules",1)
     db = 'library'
     ct = 'core_rules_dev'
-    # proc_sdtm_rules(rule_ids=["CG0063"], wrt2log=True,pub2db=1,db_name=db,ct_name=ct)
-    # proc_sdtm_rules(rule_ids=[], wrt2log=True,pub2db=1,db_name=db,ct_name=ct)
+    # proc_rules(rule_ids=["CG0063"], wrt2log=True,pub2db=1,db_name=db,ct_name=ct)
+    # proc_rules(rule_ids=[], wrt2log=True,pub2db=1,db_name=db,ct_name=ct)
 
     # Publish to dev environment t
     ct = 'editor_rules_dev'
-    # proc_sdtm_rules(rule_ids=["CG0001","CG0015", "CG0063"], wrt2log=True, pub2db=1, 
+    # proc_rules(rule_ids=["CG0001","CG0015", "CG0063"], wrt2log=True, pub2db=1, 
     #                 get_db_rule=1, db_name=db, ct_name=ct)
 
-    # proc_sdtm_rules(rule_ids=["CG0002","CG0027","CG0015", "CG0063"], wrt2log=True,
+    # proc_rules(rule_ids=["CG0002","CG0027","CG0015", "CG0063"], wrt2log=True,
     #                pub2db=1, db_name=db, ct_name=ct)
     # proc_rules(rule_ids=[], wrt2log=True, pub2db=1,
     #                get_db_rule=1, db_name=db, ct_name=ct)

@@ -1,22 +1,24 @@
-# Purpose: Create a Container in a Cosmos DB
+# Purpose: Copy rules from one container to another container in a Cosmos DB
 # -----------------------------------------------------------------------------
 # History: MM/DD/YYYY (developer) - description
 #   04/13/2023 (htu) - initial coding based on get_doc_stats
 #   04/14/2023 (htu) - 
 #    1. added code to check the target before deleting docs
 #    2. added steps 1.3 and  5
+#   04/17/2023 (htu) - added delete_target_docs parameter and used delete_rules 
 #
 import os
 import datetime as dt
 from dotenv import load_dotenv
 from rulebuilder.echo_msg import echo_msg
 from rulebuilder.get_db_cfg import get_db_cfg
+from rulebuilder.delete_rules import delete_rules 
 from rulebuilder.create_log_dir import create_log_dir
 from rulebuilder.get_doc_stats import get_doc_stats
 
 
 def copy_rules(r_str:str = None, f_ct:str=None, t_ct:str=None, f_db: str = None, 
-        t_db: str = None, write2file:int=0):
+        t_db: str = None, write2file:int=0, delete_target_docs:int=0):
     v_prg = __name__
     # 1.0 check parameters
     st_all = dt.datetime.now()
@@ -34,7 +36,7 @@ def copy_rules(r_str:str = None, f_ct:str=None, t_ct:str=None, f_db: str = None,
         return
     
     tm = dt.datetime.now()
-    job_id = tm.strftime("J%H%M%S")
+    job_id = tm.strftime("C%H%M%S")
     
     if write2file > 0:
         v_stp = 1.3 
@@ -65,6 +67,13 @@ def copy_rules(r_str:str = None, f_ct:str=None, t_ct:str=None, f_db: str = None,
     v_msg = "Getting source DB stats..."
     echo_msg(v_prg, v_stp, v_msg, 3)
     r_ids = get_doc_stats(job_id=job_id, db_cfg=cfg1,wrt2file=write2file)
+
+    if delete_target_docs == 1: 
+        v_stp = 3.5
+        v_msg = "Deleting docs in the target container..."
+        echo_msg(v_prg, v_stp, v_msg, 3)
+        delete_rules(r_str=r_str,db_cfg=cfg2,r_ids=r_ids, write2file=write2file)
+
 
     # 4.0 Loop through each rule ids requested
     v_stp = 4.0
@@ -122,17 +131,13 @@ def copy_rules(r_str:str = None, f_ct:str=None, t_ct:str=None, f_db: str = None,
             #     v_msg = f" . We could not find the source doc {doc_id} in {c1}."
             #     echo_msg(v_prg, v_stp, v_msg, 4)
             #     continue 
-            try:
-                try: 
-                    t_doc = c2.read_item(item=doc_id, partition_key=doc_id)
-                    c2.delete_item(item=t_doc, partition_key=doc_id)
-                    v_msg = f" . Document with id {doc_id} {core_id} deleted from {c2}."
-                    echo_msg(v_prg, v_stp, v_msg, 4)
-                except Exception as e: 
-                    v_msg = f"Doc {doc_id} does not exist in {c2}"
-                    echo_msg(v_prg, v_stp, v_msg, 4)
-            except Exception as e:
-                v_msg = f"Error: {e}\n . DocID: {doc_id},  CoreID: {core_id}"
+            try: 
+                t_doc = c2.read_item(item=doc_id, partition_key=doc_id)
+                c2.delete_item(item=t_doc, partition_key=doc_id)
+                v_msg = f" . Document with id {doc_id} {core_id} deleted from {c2}."
+                echo_msg(v_prg, v_stp, v_msg, 4)
+            except Exception as e: 
+                v_msg = f"Error: {e}\n . Doc {doc_id} does not exist in {c2}"
                 echo_msg(v_prg, v_stp, v_msg, 4)
             v_stp = 4.33
             try: 
@@ -162,8 +167,11 @@ if __name__ == "__main__":
     os.environ["write2log"] = "0"
     v_prg = __name__ + "::copy_rules"
     # r_str = "CG0143, CG0100,CG0377,CG0041,CG0033"
-    r_str = "ALL"
+    # r_str = "CG0509, CG0630, CG0136, CG0110, CG0111"
+    # r_str = "CG0006"
     # r_str = "CG0001,CG0002,CG0006,CG0017,CG0155,CG0156,CG0100,CG0143"
+    r_str = "ALL"
+    # r_str = "CG0157,CG0158,CG0159"
     f_db = 'library'
     t_db = 'library'
     f_ct = 'editor_rules_dev_20230411'
