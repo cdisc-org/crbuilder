@@ -6,13 +6,14 @@
 #   04/10/2023 (htu) - removed some redundant codes 
 #   04/14/2023 (htu) - added create_dir method and simplified the coding 
 #   04/18/2023 (htu) - added dat_fdir 
+#   04/19/2023 (htu) - extracted out create_dir to create_a_dir 
 #
 
 import os 
 import datetime as dt
 from dotenv import load_dotenv
-# from datetime import datetime, timezone
 from rulebuilder.echo_msg import echo_msg
+from rulebuilder.create_a_dir import create_a_dir
 
 
 def create_log_dir(log_dir: str = None, job_id: str = None, 
@@ -65,24 +66,14 @@ def create_log_dir(log_dir: str = None, job_id: str = None,
     if wrt2log > 0:
         os.environ["write2log"] = "1"
 
-    def create_dir (v_stp, v_dir):
-        if not os.path.exists(v_dir):
-            v_msg = f"Dir does not exist: {v_dir}"
-            echo_msg(v_prg, v_stp, v_msg, 3)
-            if wrt2log > 0: 
-                v_msg = f"Making dir - {v_dir}"
-                echo_msg(v_prg, v_stp, v_msg, 3)
-                os.makedirs(v_dir)
-
     # 2.0 check log_dir 
-    create_dir(2.1, log_dir)
+    create_a_dir(v_prg=v_prg, v_stp=2.1, v_dir=log_dir, wrt2log=wrt2log)
 
     log_fdir = f"{log_dir}{sub_dir}/logs"
     dat_fdir = f"{log_dir}{sub_dir}/data"
     os.environ["dat_fdir"] = dat_fdir
-    create_dir(2.2, log_fdir)
-    create_dir(2.3, dat_fdir)
-     
+    create_a_dir(v_prg=v_prg, v_stp=2.2, v_dir=log_fdir, wrt2log=wrt2log)
+    create_a_dir(v_prg=v_prg, v_stp=2.3, v_dir=dat_fdir, wrt2log=wrt2log)
     r_cfg["log_fdir"] = log_fdir
     r_cfg["dat_fdir"] = dat_fdir
 
@@ -99,11 +90,11 @@ def create_log_dir(log_dir: str = None, job_id: str = None,
     output_dir = os.getenv("output_dir")
 
     if e_rule_dir is not None:
-        create_dir(3.1, e_rule_dir)
+        create_a_dir(v_prg=v_prg, v_stp=3.1, v_dir=e_rule_dir, wrt2log=wrt2log)
     if j_rule_dir is not None:
-        create_dir(3.2, j_rule_dir)
+        create_a_dir(v_prg=v_prg, v_stp=3.2, v_dir=j_rule_dir, wrt2log=wrt2log)
     if output_dir is not None:
-        create_dir(3.3, output_dir)
+        create_a_dir(v_prg=v_prg, v_stp=3.3, v_dir=output_dir, wrt2log=wrt2log)
     
     return r_cfg
 

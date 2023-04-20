@@ -9,6 +9,7 @@
 #   03/22/2023 (htu) - added exist_rule_data
 #   04/10/2023 (htu) - added r_std 
 #   04/18/2023 (htu) - changed Rule_Type to "Rule Type"
+#   04/18/2023 (htu) - added code to check "Rule_Type" value as well
 #    
 
 import re 
@@ -74,6 +75,8 @@ def get_rtype(rule_data, exist_rule_data: dict = {}, r_std:str=None):
     #     return None
 
     r_str = exist_rule_data.get("json", {}).get("Rule Type")
+    if r_str is None: 
+        r_str = exist_rule_data.get("json", {}).get("Rule_Type")
     if r_str is not None:
         return r_str
     

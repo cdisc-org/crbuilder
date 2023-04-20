@@ -139,5 +139,6 @@ if __name__ == "__main__":
     r_str = "ALL"
     # r_str = "CG0001,CG0002,CG0006,CG0017,CG0155,CG0156,CG0100,CG0143"
     t_db = 'library'
-    t_ct = 'editor_rules_dev'
+    # t_ct = 'editor_rules_dev'
+    t_ct = "core_rules_dev"
     delete_rules(r_str, ct_name=t_ct, db_name=t_db, write2file=1)

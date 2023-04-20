@@ -129,11 +129,18 @@ This project is licensed under the MIT License - see the LICENSE.md file for det
 
 ## History
 
+
+### Version 0.4.3
+
+* Fixed rule type overwritten issue
+* Enabled comment preserving process
+* Added component diff
+
 ### Version 0.4.2
 
 * Added logic to update duplicated rule documents
 * Output all the files to the job folder
-* Added component diff
+* Fixed 4 issues related to Scope and Authorities
 
 ### Version 0.4.1
 

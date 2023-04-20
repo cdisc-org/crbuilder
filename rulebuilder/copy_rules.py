@@ -172,8 +172,10 @@ if __name__ == "__main__":
     # r_str = "CG0001,CG0002,CG0006,CG0017,CG0155,CG0156,CG0100,CG0143"
     r_str = "ALL"
     # r_str = "CG0157,CG0158,CG0159"
+    # r_str = "CG0659"
     f_db = 'library'
     t_db = 'library'
     f_ct = 'editor_rules_dev_20230411'
-    t_ct = 'editor_rules_dev'
-    copy_rules(r_str, f_ct, t_ct, f_db, t_db, write2file=1)
+    # t_ct = 'editor_rules_dev'
+    t_ct = "core_rules_dev"
+    copy_rules(r_str, f_ct, t_ct, f_db, t_db, write2file=0)

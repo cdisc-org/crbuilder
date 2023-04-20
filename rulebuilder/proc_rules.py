@@ -10,6 +10,7 @@
 #     1. changed step 3.7 so it will output to dat_fdir 
 #     2. added rename_keys at step 3.7 
 #     3. added r_json in publish_a_rule 
+#   04/19/2023 (htu) - added v_type to check and get "Rule Type" and Rule_Type
 #  
 
 import os
@@ -285,7 +286,8 @@ def proc_rules(r_standard,
     v_msg = "Group the rules and looping through each rules..."
     echo_msg(v_prg, v_stp, v_msg,1)
 
-    grouped_data = df.groupby("Rule ID")
+    df_sorted = df.sort_values(by='Rule ID')
+    grouped_data = df_sorted.groupby("Rule ID")
 
     # Loop through each Rule ID and print out required information
 
@@ -313,7 +315,7 @@ def proc_rules(r_standard,
     num_grps = grouped_data.ngroups
     i_grp = 0
     v_stp = 3.1 
-    v_re = r'([^\d]+)(\d.*)'
+    # v_re = r'([^\d]+)(\d.*)'
     for rule_id, group in grouped_data:
         i_grp += 1 
         st_row = dt.datetime.now()
@@ -367,8 +369,9 @@ def proc_rules(r_standard,
                                          doc_id=doc_id,
                                          get_db_rule=get_db_rule, r_ids=r_ids,
                                          db_name=db_name, ct_name=ct_name,
-                                         db_cfg=db_cfg,
-                                         use_yaml_content=False)
+                                         db_cfg=db_cfg
+                                #        ,use_yaml_content=False
+                                         )
             echo_msg(v_prg, v_stp, rule_obj, 9)
             # json.dump(rule_obj, sys.stdout, indent=4)
 
@@ -384,6 +387,9 @@ def proc_rules(r_standard,
             r_status = a.get("status")
             if r_status is None or r_status != "new":
                 r_status = a.get("json", {}).get("Core", {}).get("Status")
+            v_type = a.get("json", {}).get("Rule Type")
+            if v_type is None:
+                v_type = a.get("json", {}).get("Rule_Type")
             row.update(
                 {"core_id": a.get("json", {}).get("Core", {}).get("Id")})
             row.update({"user_id": a.get("creator", {}).get("id")})
@@ -391,7 +397,7 @@ def proc_rules(r_standard,
             row.update({"created": a.get("created")})
             row.update({"changed": a.get("changed")})
             row.update({"rule_status": r_status})
-            row.update({"rule_type": a.get("json", {}).get("Rule Type")})
+            row.update({"rule_type": v_type})
             row.update({"sensitivity": a.get(
                 "json", {}).get("Sensitivity")})
 

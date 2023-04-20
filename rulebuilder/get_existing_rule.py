@@ -186,7 +186,8 @@ def get_existing_rule(rule_id = None, in_rule_folder = None, doc_id = None,
         echo_msg(v_prg, v_stp, v_msg, 5)
         # print(f"JSON Content: {r_json['content']}")
 
-        y_content = yaml_loader.load(r_json["content"]) or {}
+        # y_content = yaml_loader.load(r_json["content"]) or {}
+        r_json["json"] = y_content
          
         # r_json["json"] = Transformer.spaces_to_underscores(
         #    safe_load(r_json["content"]))
