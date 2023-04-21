@@ -128,10 +128,11 @@ def get_existing_rule(rule_id = None, in_rule_folder = None, doc_id = None,
     default_id = "dd0f9aa3-68f9-4825-84a4-86c8303daaff"
     if rule_guid is None:
         v_stp = 3.1 
-        v_msg = "Did not find GUID for the rule."
+        v_guid = str(uuid.uuid4())
+        v_msg = f"Did not find doc GUID and generated a new {v_guid} for {rule_id}."
         echo_msg(v_prg, v_stp, v_msg, 5)
         r_json = {
-            "id": str(uuid.uuid4()),
+            "id": v_guid,
             "created": now_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "changed": now_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "creator": {
@@ -142,7 +143,7 @@ def get_existing_rule(rule_id = None, in_rule_folder = None, doc_id = None,
         }
     else:
         v_stp = 3.2 
-        v_msg = "Found GUID for the rule."
+        v_msg = f"Found GUID for the rule - {rule_id}."
         echo_msg(v_prg, v_stp, v_msg, 5)
         r_json = json_data
         r_json["changed"] = now_utc.strftime("%Y-%m-%dT%H:%M:%SZ")

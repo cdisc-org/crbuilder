@@ -477,14 +477,15 @@ def proc_rules(r_standard,
             v_msg = f"The job {job_id} for {rule_id} was done between: {st} and {et}"
             echo_msg(v_prg, v_stp, v_msg, 2)
         # End of def proc_each_rule 
+        # -------------------- proc_each_rule -------------------------------
+        doc_id = None
         if d_len == 0:
-            doc_id = None
             proc_each_rule()
         else:  
             for doc_id in doc_ids: 
                 d_cnt += 1 
                 proc_each_rule()
-        # End of for doc_id in r_ids.get(rule_id).get("ids")
+            # End of for doc_id in doc_ids
 
     # End of for rule_id, group in grouped_data
 

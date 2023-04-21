@@ -20,6 +20,11 @@
 # python rulebuilder.py process --r_standard FDA_VR1_6 --s_domain DM  --ct_name editor_rules_dev --msg_lvl 3
 # python rulebuilder.py process --r_standard SDTM_V2_0 --r_ids ALL  --ct_name editor_rules_dev --pub2db 1
 # python rulebuilder.py process --r_standard SDTM_V2_0 --r_ids ALL  --ct_name core_rules_dev --pub2db 1
+# 04/20/2023:
+#   python rulebuilder.py process --r_standard SDTM_V2_0 --r_ids "CG0111,CG0233,CG0235,CG0622,CG0630,CG0415,CG0437,CG0101,CG0185,CG0006,CG0222,CG0663,CG0659" --ct_name core_rules_dev --pub2db 1
+#   python rulebuilder.py process --r_standard SDTM_V2_0 --r_ids "CG0111,CG0233,CG0235,CG0622,CG0630,CG0415,CG0437,CG0101,CG0185,CG0006,CG0222,CG0663,CG0659" --ct_name editor_rules_dev --pub2db 1
+#   python rulebuilder.py process --r_standard SDTM_V2_0 --r_ids ALL  --ct_name editor_rules_dev --pub2db 1
+#   python rulebuilder.py process --r_standard FDA_VR1_6 --r_ids ALL  --ct_name editor_rules_dev --pub2db 1
 
 import os
 import click

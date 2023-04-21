@@ -132,11 +132,13 @@ def copy_rules(r_str:str = None, f_ct:str=None, t_ct:str=None, f_db: str = None,
             #     echo_msg(v_prg, v_stp, v_msg, 4)
             #     continue 
             try: 
+                v_stp = 4.321
                 t_doc = c2.read_item(item=doc_id, partition_key=doc_id)
                 c2.delete_item(item=t_doc, partition_key=doc_id)
                 v_msg = f" . Document with id {doc_id} {core_id} deleted from {c2}."
                 echo_msg(v_prg, v_stp, v_msg, 4)
             except Exception as e: 
+                v_stp = 4.322
                 v_msg = f"Error: {e}\n . Doc {doc_id} does not exist in {c2}"
                 echo_msg(v_prg, v_stp, v_msg, 4)
             v_stp = 4.33
@@ -176,6 +178,6 @@ if __name__ == "__main__":
     f_db = 'library'
     t_db = 'library'
     f_ct = 'editor_rules_dev_20230411'
-    # t_ct = 'editor_rules_dev'
-    t_ct = "core_rules_dev"
-    copy_rules(r_str, f_ct, t_ct, f_db, t_db, write2file=0)
+    t_ct = 'editor_rules_dev'
+    # t_ct = "core_rules_dev"
+    copy_rules(r_str, f_ct, t_ct, f_db, t_db, write2file=1)
