@@ -27,6 +27,12 @@ To install `RuleBuilder` class, run the following command:
 pip install crbuilder
 ```
 
+or
+
+```python
+pip install git+https://github.com/cdisc-org/crbuilder.git
+```
+
 ## Usage
 
 The `RuleBuilder` class can be used to process conformance rules with many commands and options. 
@@ -129,12 +135,16 @@ This project is licensed under the MIT License - see the LICENSE.md file for det
 
 ## History
 
+### Version 0.4.4
+
+* Add citation for multiple rules in a single doc 
+* Added component diff
+
 
 ### Version 0.4.3
 
 * Fixed rule type overwritten issue
 * Enabled comment preserving process
-* Added component diff
 
 ### Version 0.4.2
 
