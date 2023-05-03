@@ -5,14 +5,23 @@
 #
 
 import os 
+import re 
 import glob
+import pickle
 import pandas as pd
 import xml.etree.ElementTree as ET
+
+def output2pick(df, f_name): 
+    # Open a file for writing binary data
+    with open(f_name, 'wb') as f:
+        print(f"Writing to file: {f_name}...")
+        # Serialize the object and write it to the file
+        pickle.dump(df, f)
 
 def parse_xml_files (
         xml_fn:str="SDTM-IG 3.3 (FDA).xml", 
         i_dir:str="./data/source/xmls/2204.0",
-        o_dir:str="./data/output/csvs"
+        o_dir:str="./data/source"
 ):
     if "/" in xml_fn: 
         ifn_path = xml_fn
@@ -20,7 +29,9 @@ def parse_xml_files (
     else:
         ifn = xml_fn
         ifn_path = f"{i_dir}/{xml_fn}"
-    ofn_csv = f"{o_dir}/{ifn}.csv"
+    ifn_rt = re.sub(r'\.[^.]*$', '', ifn)
+    ofn_csv = f"{o_dir}/csvs/{ifn_rt}.csv"
+    ofn_pkl = f"{o_dir}/pick/{ifn_rt}.pkl"
 
     # Parse the XML file
     tree = ET.parse(ifn_path)
@@ -70,11 +81,16 @@ def parse_xml_files (
     # Write the DataFrame to a CSV file
     df_sorted.to_csv(ofn_csv, index=False)
 
+    output2pick(df_sorted, ofn_pkl)
+
+    # Write the DataFrame to a Pickle file 
+    return df_sorted
 
 # Test cases
 if __name__ == "__main__":
     # Define the path to the folder containing the XML files
     folder_path = './data/source/xmls/2204.0'
+    folder_path ="/Users/htu/GitHub/repo/configs/2204.0"
 
     # Use glob to search for XML files in the folder
     xml_files = glob.glob(folder_path + '/*.xml')

@@ -14,12 +14,12 @@ from selenium.webdriver.chrome.options import Options
 def get_rule_data_from_web(
         i_std: str = "sdtm", 
         i_url: str = "https://www.pinnacle21.com/validation-rules",
-        o_dir: str = "./data/output"
+        o_dir: str = "./data/source"
         
     ):
     url = f"{i_url}/{i_std}"
-    ofn_xlx = f"{o_dir}/rule-{i_std}.xlsx"
-    ofn_csv = f"{o_dir}/rule-{i_std}.csv"
+    ofn_xlx = f"{o_dir}/xlsx/rule-{i_std}.xlsx"
+    ofn_csv = f"{o_dir}/csvs/rule-{i_std}.csv"
 
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
