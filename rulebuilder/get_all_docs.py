@@ -38,13 +38,9 @@ def get_all_docs(db: str = 'library',
 
     qry = "SELECT * FROM c"
 
-
     # query_options = {'enable_cross_partition_query': True}
 
-
-
-
-    # . 2.0 get DB configuration
+    # 2.0 get DB configuration
     v_stp = 2.0
     v_msg = f"Get DB configuration ({db}.{ct})..."
     echo_msg(v_prg, v_stp, v_msg, 2)

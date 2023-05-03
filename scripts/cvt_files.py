@@ -107,6 +107,14 @@ def cvt_xlsx(std: str = "SDTM_V2_0", r_dir: str = None,
 
     read_pick(opf)
 
+def csv2pkl (fn:str, dir:str="./data/source"):
+    # fn_rt = re.sub(r'\.[^.]*$', '', fn)
+    fn1 = f"{dir}/csvs/{fn}.csv"
+    fn2 = f"{dir}/pick/{fn}.pkl"
+
+    df = pd.read_csv(fn1)
+    output2pick(df, fn2)
+
 
 # python -c "import pandas as pd; print(pd.__version__)"
 # python -c "import openpyxl as xl; print(xl.__version__)"
@@ -115,6 +123,8 @@ def cvt_xlsx(std: str = "SDTM_V2_0", r_dir: str = None,
 
 
 if __name__ == '__main__':
-    for s in source_data_files.keys(): 
-        print(f"Converting Standard - {s}...")
-        df = cvt_xlsx(s, s_files=source_data_files)
+    # for s in source_data_files.keys(): 
+    #     print(f"Converting Standard - {s}...")
+    #     df = cvt_xlsx(s, s_files=source_data_files)
+    for f in ["rule-sdtm","rule-adam","rule-send","rule-define-xml"]:
+        csv2pkl(f)
