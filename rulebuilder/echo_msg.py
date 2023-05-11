@@ -144,7 +144,10 @@ def echo_msg(prg, step, msg, lvl=0, fn=None, i:int=0, n:int=0):
             print("<br>")
 
     if lvl <= int(g_msg_lvl):
-        print(fmt % (prg, step, msg))
+        if i > 0:
+            print(fmt % (prg, step, f"({i}/{n}): {msg}"))
+        else: 
+            print(fmt % (prg, step, msg))
     if log_f1 and wrt2log >= 1:
         if not os.path.isfile(log_f1) and lvl == 1:
             print(f"*L1 Logging to: {log_f1}" )
@@ -201,7 +204,10 @@ def echo_msg(prg, step, msg, lvl=0, fn=None, i:int=0, n:int=0):
                         else: 
                             f.write(fmt % (prg, step, f"{msg}\n"))
                 else: 
-                    f.write(fmt % (prg, step, f"{msg}\n"))
+                    if i > 0:
+                        f.write(fmt % (prg, step, f"({i}/{n}) {msg}\n"))
+                    else:
+                        f.write(fmt % (prg, step, f"{msg}\n"))
     return None 
 
 

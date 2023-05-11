@@ -3,77 +3,16 @@
 # History: MM/DD/YYYY (developer) - description
 #   05/07/2023 (htu) - initial coding based on combine_rules
 #   05/09/2023 (htu) - added sdtm2html and updated fda_rules2html
+#   05/10/2023 (htu) - write out HTML code for each FDA rule
 
 import re 
 import json
 import pandas as pd
 import yaml
-import pickle
-from bs4 import BeautifulSoup
-
-def read_pick(fn):
-    # Open the file for reading binary data
-    with open(fn, 'rb') as f:
-        # Deserialize the object from the file
-        data = pickle.load(f)
-    # Create a DataFrame from the loaded data
-    df = pd.DataFrame(data)
-    # print(df) 
-    return df   
-
-def get_fda_sdtm(i_dir:str="./data/source",o_dir:str="./data/output"):
-    df_s3_2 = get_fda_32(i_dir,o_dir)
-    df_s3_3 = get_fda_33(i_dir,o_dir)
-    df_sdtm_fda = pd.concat([df_s3_2, df_s3_3])
-    return df_sdtm_fda
-
-def get_fda_32(i_dir:str="./data/source",o_dir:str="./data/output"):
-    fn_s3_2 = "SDTM-IG 3.2 (FDA).pkl"
-    fp_s3_2 = f"{i_dir}/pick/{fn_s3_2}"
-    df_s3_2 = read_pick(fp_s3_2)
-    df_s3_2["SDTMIG Version"] = "3.2"
-    return df_s3_2
-
-def get_fda_33(i_dir:str="./data/source",o_dir:str="./data/output"):
-    fn_s3_3 = "SDTM-IG 3.3 (FDA).pkl"
-    fp_s3_3 = f"{i_dir}/pick/{fn_s3_3}"
-    df_s3_3 = read_pick(fp_s3_3)
-    df_s3_3["SDTMIG Version"] = "3.3"
-    return df_s3_3
-
-
-def write_df2html(df_tbl, fp_html, tbl_title:str=None): 
-    # convert the dataframe to an HTML table
-    html_table = df_tbl.to_html(render_links=True, escape=False)
-
-    # create a BeautifulSoup object
-    soup = BeautifulSoup(html_table, 'html.parser')
-
-    if not soup.html:
-        soup.append(soup.new_tag('html'))
-    if not soup.head:
-        soup.html.append(soup.new_tag('head'))    # add some additional styling to the table
-    table_style = soup.new_tag('style')
-    table_style.string = 'table {border-collapse: collapse;} th, td {border: 1px solid black; padding: 5px;}'
-
-    # append the styling to the head of the HTML document
-    soup.head.append(table_style)
-
-    # print the final HTML table
-    # print(soup.prettify())
-
-    # create a file object for writing
-    
-    with open(fp_html, 'w') as f:
-        # write the prettified HTML code to the file
-        f.write(soup.prettify())
-    print(f"  Written to {fp_html}.")
-
-def get_current_rule_defs (i_dir:str="./data/source",o_dir:str="./data/output"): 
-    fn_rule = "R193830-20230428.csv"
-    fp_rule = f"{i_dir}/rule/{fn_rule}"
-    df_rule = pd.read_csv(fp_rule)
-    return df_rule
+from rulebuilder.write_df2html import write_df2html
+from rulebuilder.pickle_files import read_pick
+from rulebuilder.get_rule_data import (get_fda_32, get_fda_33, 
+    get_fda_sdtm, get_current_rule_defs)
 
 def sdtm2html(i_dir:str="./data/source",o_dir:str="./data/output"):
     # 1. read FDA rule definition
@@ -259,14 +198,61 @@ def sdtm2html(i_dir:str="./data/source",o_dir:str="./data/output"):
         df_tbl = pd.DataFrame.from_records(df_tbl_rows)
         write_df2html(df_tbl,fn_rule,f"Rule ID {r_id}")
     # End of for r_id, group in df2_grouped
- 
 
-def fda_rules2html(i_dir:str="./data/source",o_dir:str="./data/output"):
+def get_rr_def(f_id, df3): 
+    if f_id not in df3.index: 
+        return None
+    core_id = df3.loc[f_id,"CORE-ID"]
+    r_sc = str(df3.loc[f_id,"Scope"])
+    r_op = str(df3.loc[f_id,"Operations"])
+    r_ck = str(df3.loc[f_id,"Check"]) 
+    if isinstance(r_sc, pd.Series): 
+        # r_scope = json.dumps(r_sc.to_dict())
+        # r_opera = json.dumps(df3.loc[f_id,"Operations"].to_dict())
+        # r_check = json.dumps(df3.loc[f_id,"Check"].to_dict())
+        r_scope = r_sc.to_dict()
+        r_opera = r_op.to_dict()
+        r_check = r_ck.to_dict()
+    else: 
+        # r_scope = json.dumps(r_sc) 
+        # r_opera = json.dumps(df3.loc[f_id,"Operations"])
+        # r_check = json.dumps(df3.loc[f_id,"Check"])
+        r_scope = r_sc.replace("'", '"')
+        r_opera = r_op.replace("'", '"')
+        r_check = r_ck.replace("'", '"')
+    # print(f"Scope: {r_scope}\nOpera: {r_opera}\nCheck: {r_check}")
+    rr_def = {}
+    rr_def["CORE-ID"] = core_id
+    v1 = str(r_scope)
+    if bool(v1 and v1.strip()) and v1 not in ("nan","X"): 
+        try:
+            rr_def["Scope"] = json.loads(v1)
+        except json.decoder.JSONDecodeError:
+            rr_def["Scope"] = v1 
+            print(f"ERR: {core_id} Scope: {v1}")
+    v2 = str(r_opera)
+    if bool(v2 and v2.strip()) and v2 not in ("nan","X"):
+        try: 
+            rr_def["Operations"] = json.loads(v2)
+        except json.decoder.JSONDecodeError:
+            rr_def["Operations"] = v2 
+            print(f"ERR: {core_id} Operations: {v2}")
+    v4 = str(r_check)
+    if bool(v4 and v4.strip()) and v4 not in ("nan","X"): 
+        try:
+            rr_def["Check"] = json.loads(v4)
+        except json.decoder.JSONDecodeError:
+            rr_def["Check"] = v4 
+            print(f"ERR: {core_id} Check: {v4}")
+    return rr_def
+
+def fda_rules2html(f_ids:list=[],i_dir:str="./data/source",o_dir:str="./data/output"):
     # 1. read rule definition
     fn_sdtm = "fda_vr1_6.pick"
     # fn_sdtm = "sdtm_v2_0.pick"
     fp_sdtm = f"{i_dir}/pick/{fn_sdtm}"
     fp_html = f"{o_dir}/html/fda_vr1_6_idx.html"
+    fp_csv  = f"{o_dir}/csvs/fda_vr1_6_idx.csv"
     sud_dir = "sdtm"
     html_sud_dir=f"{o_dir}/html/{sud_dir}"
     df_fda_sdtm = read_pick(fp_sdtm)
@@ -306,6 +292,8 @@ def fda_rules2html(i_dir:str="./data/source",o_dir:str="./data/output"):
     df3 = df_rule.rename(columns={'CDISC Rule ID': 'Rule ID'})
     df3_keys = df3.columns 
     df3.set_index("Rule ID", inplace=True)
+    df3_fn = f"{i_dir}/csvs/cdisc_dev_rule2.csv"
+    df3.to_csv(df3_fn)
     # print(f"Current Rule Development DF3 Keys: {df3_keys}") 
     # Current Rule Development DF3 Keys: Index(['CORE-ID', 'Rule ID', 'Organization', 'Standard Name',
     #    'Standard Version', 'Status', 'Sensitivity', 'Rule Type',
@@ -345,19 +333,57 @@ def fda_rules2html(i_dir:str="./data/source",o_dir:str="./data/output"):
     df_tbl.insert( 9,"Core ID", None)
     df_tbl.insert(10,"Organization", None)
     df_tbl.insert(11,"Standard Name", None)
-    df_tbl.insert(12,"Rule-Type", None)
-    df_tbl.insert(13,"Error Message", None)
-    df_tbl.insert(14,"Rule Description", None)
-    df_tbl.insert(15,"Rule Definition", None)       # Scope, Check and Operation
+    df_tbl.insert(12,"CDISC Rule Type", None)
+    df_tbl.insert(13,"CDISC Rule Status", None)    
+    df_tbl.insert(14,"CDISC Description", None)
+    df_tbl.insert(15,"CDISC Definition", None)       # Scope, Check and Operation
 
     df_tbl.insert(16,"P21 Rule Type", None)
     df_tbl.insert(17,"P21 Category", None)
     df_tbl.insert(18,"P21 Message", None)
     df_tbl.insert(19,"P21 Description", None)
     df_tbl.insert(20,"P21 Rule Definition", None)
+    r_tbl_cols = ["FDA ID","Rule ID", "Key","Value"]
+    f_id_key = "FDA Validator Rule ID"
     for i, r1 in df_tbl.iterrows():
-        f_id = r1.get("FDA Validator Rule ID")
+        f_id = r1.get(f_id_key)
+        if len(f_ids) > 0 and f_id not in f_ids:
+            continue 
+        h_fn = f"{o_dir}/html/fda/{f_id}.html"
+        r_tbl = pd.DataFrame(columns=r_tbl_cols) 
+        r_tbl_rows = []
         p_ids = r1.get(k_pub)
+        r_tbl_rows.append({"FDA ID":"-----", "Rule ID":"-----",
+            "Key": "-----", "Value": "-- FDA Comformance Rule --"})
+        for k1 in df1_keys:
+            v1 = str(r1.get(k1))
+            r_tbl_rows.append({"FDA ID":f_id, "Rule ID":p_ids,
+                               "Key": k1, "Value": v1})
+        if f_id in df3.index:   
+            r_tbl_rows.append({"FDA ID":"-----", "Rule ID":"-----",
+                "Key": "-----", "Value": "-- CDISC Rules --"})
+            for k3 in df3.columns:
+                v3 = str(df3.loc[f_id, k3])
+                if bool(v3 and v3.strip()) and v3 not in ("nan","X"): 
+                    # print(f"FID={f_id}: {k3}={v3}")
+                    r_tbl_rows.append({"FDA ID":f_id, "Rule ID":p_ids,
+                                "Key": k3, "Value": v3})
+        if f_id in df4_32.index: 
+            r_tbl_rows.append({"FDA ID":"-----", "Rule ID":"-----",
+                "Key": "-----", "Value": "-- P21 SDTM V3.2 --"})
+            for k4 in df4_32.columns:
+                v4 = str(df4_32.loc[f_id, k4])
+                if bool(v4 and v4.strip()) and v4 not in ("nan","X"): 
+                    r_tbl_rows.append({"FDA ID":f_id, "Rule ID":p_ids,
+                                "Key": k4, "Value": v4})
+        if f_id in df4_33.index: 
+            r_tbl_rows.append({"FDA ID":"-----", "Rule ID":"-----",
+                "Key": "-----", "Value": "-- P21 SDTM V3.3 --"})
+            for k4 in df4_33.columns:
+                v4 = str(df4_33.loc[f_id, k4])
+                if bool(v4 and v4.strip()) and v4 not in ("nan","X"): 
+                    r_tbl_rows.append({"FDA ID":f_id, "Rule ID":p_ids,
+                                "Key": k4, "Value": v4})                 
         p_id_lst1 = p_ids.split(",")
         p_id_lst = [element.strip() for element in p_id_lst1]
         tot_k = len(p_id_lst)
@@ -372,7 +398,6 @@ def fda_rules2html(i_dir:str="./data/source",o_dir:str="./data/output"):
             k_cnt += 1
             print(f"  {k_cnt}/{tot_k}:{p_id}")
             j_cnt = 0
-
             c_condition = "" if c_condition == "" else f"{c_condition}<hr>"
             c_rule = "" if c_rule == "" else f"{c_rule}<hr>"
             c_cited_guidance = "" if c_cited_guidance == "" else f"{c_cited_guidance}<hr>"
@@ -387,6 +412,7 @@ def fda_rules2html(i_dir:str="./data/source",o_dir:str="./data/output"):
                 else:
                     is_match = "Yes"
                 print(f"      {j_cnt}/{tot_j}:{is_match} - {r_id}/{p_id} in ({p_ids})")
+
                 # replace r_id in p_ids with a html link to a file
                 df_tbl.iloc[i][k_pub] = re.sub(r_id, 
                     f"<a href='./{sud_dir}/{r_id}.html' target='_blank'>{r_id}</a>", df_tbl.iloc[i][k_pub])
@@ -396,6 +422,15 @@ def fda_rules2html(i_dir:str="./data/source",o_dir:str="./data/output"):
                     c_cit = row.get("Cited Guidance")
                     r_ver = row.get(j_ver)
                     c_key = f"SDTMIG{r_ver}"
+                    r_tbl_rows.append({"FDA ID":"-----", "Rule ID":"-----",
+                                    "Key": "-----", 
+                                    "Value": f"-- SDTM Rule Definition ({r_ver}) --"})       
+                    for k2 in df2_keys:
+                        v2 = str(row.get(k2))
+                        if bool(v2 and v2.strip()) and v2 not in ("nan","X"): 
+                            r_tbl_rows.append({"FDA ID":f_id, "Rule ID":p_id,
+                                    "Key": k2, "Value": v2})
+                        
                     c_condition = f"{c_condition}{r_id}/{r_ver}: {c_cdn}<br>"
                     c_rule = f"{c_rule}{r_id}/{r_ver}: {c_rul}<br>"
                     c_cited_guidance = f"{c_cited_guidance}{r_id}/{r_ver}: {c_cit}<br>"
@@ -409,7 +444,7 @@ def fda_rules2html(i_dir:str="./data/source",o_dir:str="./data/output"):
                             f"<a href='./{sud_dir}/{r_id}-{r_ver}.html' target='_blank'>{c_val}</a>", 
                             df_tbl.iloc[i][c_key])
                     # End of if c_key in df1_keys
-                # End of for v_i1, row in group.iterrows()
+                # End of for v_i, row in group.iterrows()
             # End of for r_id, group in df2_grouped
         # End of for p_id in p_id_lst
         df_tbl.iloc[i]["CDISC Condition"] = c_condition
@@ -420,28 +455,33 @@ def fda_rules2html(i_dir:str="./data/source",o_dir:str="./data/output"):
         df_tbl.iloc[i]["Core ID"] = df3.loc[f_id,"CORE-ID"]
         df_tbl.iloc[i]["Organization"] = df3.loc[f_id,"Organization"]
         df_tbl.iloc[i]["Standard Name"] = df3.loc[f_id,"Standard Name"]
-        df_tbl.iloc[i]["Rule-Type"] = df3.loc[f_id,"Rule Type"]
-        df_tbl.iloc[i]["Error Message"] = df3.loc[f_id,"Error Message"]
-        df_tbl.iloc[i]["Rule Description"] = df3.loc[f_id,"Description"]
-        r_scope = df3.loc[f_id,"Scope"]
-        r_opera = df3.loc[f_id,"Operations"]
-        r_check = df3.loc[f_id,"Check"]
+        df_tbl.iloc[i]["CDISC Rule Type"] = df3.loc[f_id,"Rule Type"]
+        df_tbl.iloc[i]["CDISC Rule Status"] = df3.loc[f_id,"Status"]
+        r_err = df3.loc[f_id,"Error Message"]
+        r_dsc = df3.loc[f_id,"Description"]
+        df_tbl.iloc[i]["CDISC Description"] = f"Error Message: {r_err}<br><br>Description: {r_dsc}"
+    
+        rr_def = get_rr_def(f_id, df3)
+        # json_dict = json.dumps(rr_def)
+        yaml_str = yaml.dump(rr_def, default_flow_style=False)
+        # print(f"JSON: {rr_def}\nYAML: {yaml_str}")
+        # text = yaml_str.replace('\n','<br>').replace(' ','&nbsp;')
+        text = yaml_str.replace('\n','<br>')
+        rr_defs = f"{f_id}:<br><code>{yaml_str}</code>"
 
-        rr_def = {}
-        v4 = str(r_scope)
-        if bool(v4 and v4.strip()) and v4 not in ("nan","X"): 
-            rr_def["Scope"] = r_scope
-        v4 = str(r_opera)
-        if bool(v4 and v4.strip()) and v4 not in ("nan","X"):
-            rr_def["Operations"] = r_opera
-        v4 = str(r_check)
-        if bool(v4 and v4.strip()) and v4 not in ("nan","X"): 
-            rr_def["Check"] = r_check 
-        json_dict = json.dumps(rr_def)
-        yaml_str = yaml.dump(json_dict, default_flow_style=False)
-        df_tbl.iloc[i]["Rule Definition"] = f"<code>{rr_def}</code>"
+        for p_id in p_id_lst:
+            rr_dd = get_rr_def(p_id, df3)
+            if rr_dd is None: 
+                continue    
+            yaml_str = yaml.dump(rr_dd, default_flow_style=False)
+            # text = yaml_str.replace('\n','<br>').replace(' ', '&nbsp;')
+            # text = yaml_str.replace('\n','<br>')
+            rr_defs = f"{rr_defs}<br><br>{p_id}:<br><code>{yaml_str}</code>"
+
+        df_tbl.iloc[i]["CDISC Definition"] = rr_defs 
 
         # 5.3 link to P21 ruke definition
+        skipped_cols = ["Rule Type","Category","PublisherID","Message","Description"]
         if f_id in df4_33.index: 
             df_tbl.iloc[i]["P21 Rule Type"] = df4_33.loc[f_id,"Rule Type"]
             df_tbl.iloc[i]["P21 Category"] = df4_33.loc[f_id,"Category"]
@@ -449,7 +489,6 @@ def fda_rules2html(i_dir:str="./data/source",o_dir:str="./data/output"):
             df_tbl.iloc[i]["P21 Description"] = df4_33.loc[f_id,"Description"]
             
             r4_def = f"<table id='{f_id}-p21.33-{i}'>"
-            skipped_cols = ["Rule Type","Category","PublisherID","Message","Description"]
             for k4 in df5_cols:
                 v4 = str(df4_33.loc[f_id,k4])
                 if k4 not in skipped_cols:
@@ -457,8 +496,16 @@ def fda_rules2html(i_dir:str="./data/source",o_dir:str="./data/output"):
                         r4_def = f"{r4_def}<tr><td>{k4}</td><td>{v4}</td></tr>"
             r4_def = f"{r4_def}</table>"
             df_tbl.iloc[i]["P21 Rule Definition"] = r4_def
+        
+        # write out each FDA rule
+        df_tbl.iloc[i][f_id_key] = re.sub(f_id, 
+            f"<a href='./fda/{f_id}.html' target='_blank'>{f_id}</a>", df_tbl.iloc[i][f_id_key])
+        r_tbl = pd.DataFrame.from_records(r_tbl_rows)
+        write_df2html(r_tbl,h_fn)
     # End of for i, r1 in df_tbl.iterrows()
     write_df2html(df_tbl, fp_html)
+    print(f"Writing to {fp_csv}...")
+    df_tbl.to_csv(fp_csv, index=False)
     return df_tbl 
     
 
@@ -489,6 +536,6 @@ def print_df (r_id:str=None, k_id:str=None, df:dict=None):
 # Test cases
 if __name__ == "__main__":
     # combine_sdtm()
-    df = fda_rules2html()
+    df = fda_rules2html([])
     # sdtm2html()
     # print_df("CG0021", df=df)
