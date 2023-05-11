@@ -12,6 +12,7 @@
 #     3. extracted out replace_operator function 
 #     4. extracted out get_jmsg
 #   03/22/2023 (htu) - added exist_rule_data
+#   04/11/2023 (htu) - added r_std 
 #    
 #
 import pandas as pd
@@ -21,7 +22,7 @@ from rulebuilder.get_jmsg import get_jmsg
 from rulebuilder.get_existing_rule import get_existing_rule
 
 
-def get_desc(rule_data, exist_rule_data: dict = {}):
+def get_desc(rule_data, exist_rule_data: dict = {}, r_std:str=None):
     """
     Returns a string describing the trigger condition based on the given rule data.
 
@@ -31,7 +32,7 @@ def get_desc(rule_data, exist_rule_data: dict = {}):
         A Pandas DataFrame containing the rule data.
 
     existing_rule_data: dict 
-        a data frame containng all the records for a rule that already developed. It 
+        a data frame containing all the records for a rule that already developed. It 
         can be read from the existing rule folder using get_existing_rule. 
 
     Returns:
@@ -40,12 +41,36 @@ def get_desc(rule_data, exist_rule_data: dict = {}):
     Raises:
         None.
     """
-    v_desc = exist_rule_data.get("json",{}).get("Description")
-    if v_desc == None:
-        jmsg = get_jmsg(rule_data)
+    v_prg = __name__
+    v_stp = 1.0
+    v_msg = "Getting Rule Description..."
+    echo_msg(v_prg, v_stp, v_msg, 2)
+    v_desc = exist_rule_data.get("json", {}).get("Description")
+    if v_desc is not None:
+        return v_desc
+    
+    # print(f"RuleData: {rule_data}")
+
+    v_stp = 2.0
+    r_std = os.getenv("r_standard") if r_std is None else r_std
+    r_std = r_std.upper()
+    v_msg = f"From {r_std} rule definition..."
+    if r_std == "SDTM_V2_0":
+        v_stp = 2.1
+        jmsg = get_jmsg(rule_data,exist_rule_data=exist_rule_data,r_std=r_std)
         # print(f"jmsg: {jmsg}")  # Debugging print statement
         v_desc = "Trigger error when " + jmsg
         # print(f"desc: {desc}")  # Debugging print statement
+        # Disable the description for SDTM 
+        v_desc = "" 
+    elif r_std == "FDA_VR1_6":
+        v_stp = 2.2
+        # print(f"VDesc: {rule_data.iloc[0]}")
+        v_desc = rule_data.iloc[0]["FDA Validator Rule Description"]
+
+    echo_msg(v_prg, v_stp, v_msg, 3)
+    echo_msg(v_prg, v_stp, v_desc, 9)
+        
     return v_desc
 
 # Test cases

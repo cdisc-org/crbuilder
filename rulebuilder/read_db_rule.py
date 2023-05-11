@@ -2,6 +2,8 @@
 # -----------------------------------------------------------------------------
 # History: MM/DD/YYYY (developer) - description
 #   04/05/2023 (htu) - initial coding 
+#   04/14/2023 (htu) - added logic to deal with multiple documents in step 2.1
+#   04/18/2023 (htu) - added read_a_doc and doc_id 
 #
 import os
 import sys
@@ -12,16 +14,28 @@ from rulebuilder.get_doc_stats import get_doc_stats
 from azure.cosmos.exceptions import CosmosResourceNotFoundError
 
 
-def read_db_rule(rule_id: str, db_cfg = None, r_ids = None, 
-                 db_name:str=None, ct_name:str=None):
+def read_db_rule(rule_id: str=None, db_cfg = None, r_ids = None, 
+                 db_name:str=None, ct_name:str=None, doc_id = None):
     v_prg = __name__
 
     # 1.0 check parameters
 
+    def read_a_doc (v_stp, d_id, rule_id, ctc, db, ct):
+        r_json = {}
+        try:
+            v_msg = f"Reading {rule_id} ({d_id}) in {db}.{ct}"
+            r_json = ctc.read_item(item=d_id, partition_key=d_id)
+            echo_msg(v_prg, v_stp, v_msg, 2)
+        except CosmosResourceNotFoundError:
+            v_msg = f"Could not read {rule_id} ({d_id}) from {db}.{ct}"
+            echo_msg(v_prg, v_stp, v_msg, 0)
+        return r_json 
+
+
     # 1.1 check rule_id 
-    if rule_id is None:
+    if rule_id is None and doc_id is None:
         v_stp = 1.1
-        v_msg = "No rule_id is provided."
+        v_msg = "No rule_id nor doc_id is provided."
         echo_msg(v_prg, v_stp, v_msg, 0)
         return {}
 
@@ -38,7 +52,11 @@ def read_db_rule(rule_id: str, db_cfg = None, r_ids = None,
     db  = db_cfg.get("db_name")
     ct  = db_cfg.get("ct_name")
 
-    # 1.3 get rule stats
+    # 1.3 read the document if doc_id is provided
+    if doc_id is not None:
+        return read_a_doc(1.3, doc_id, rule_id, ctc, db, ct)
+
+    # 1.4 get rule stats
     if r_ids is None:
         r_ids = get_doc_stats(db=db,ct=ct)
 
@@ -48,18 +66,27 @@ def read_db_rule(rule_id: str, db_cfg = None, r_ids = None,
         v_stp = 2.1
         r_docs = r_ids.get(rule_id, {}).get("ids")
         d_id = r_docs[0]
-        try:
-            v_stp = 2.11
-            v_msg = f"Reading {rule_id} ({d_id}) in {db}.{ct}"
-            r_json = ctc.read_item(item=d_id, partition_key=d_id)
-            echo_msg(v_prg, v_stp, v_msg, 2)
-        except CosmosResourceNotFoundError:
-            v_stp = 2.12
-            v_msg = f"Could not read {rule_id} ({d_id}) from {db}.{ct}"
-            echo_msg(v_prg, v_stp, v_msg, 0)
+        if r_ids[rule_id]["cnt"] > 1:
+            for i in range(len(r_ids[rule_id]["status"])):
+                v_cs = r_ids[rule_id]["status"][i]
+                if v_cs == "Published": 
+                    # we will use published document 
+                    d_id = r_ids[rule_id]["ids"][i]
+                    break 
+        v_msg = f"READ: {d_id} for {rule_id}"
+        echo_msg(v_prg, v_stp, v_msg, 2)
+        r_json = read_a_doc(2.11, d_id, rule_id, ctc, db, ct)
+        # try:
+        #     v_stp = 2.11
+        #     v_msg = f"Reading {rule_id} ({d_id}) in {db}.{ct}"
+        #     r_json = ctc.read_item(item=d_id, partition_key=d_id)
+        #     echo_msg(v_prg, v_stp, v_msg, 2)
+        # except CosmosResourceNotFoundError:
+        #     v_stp = 2.12
+        #     v_msg = f"Could not read {rule_id} ({d_id}) from {db}.{ct}"
+        #     echo_msg(v_prg, v_stp, v_msg, 0)
     else:
         v_stp = 2.2
-        
         v_msg = f"Could not find {rule_id} in {db}.{ct}"
         echo_msg(v_prg, v_stp, v_msg, 0)
     
@@ -72,8 +99,12 @@ if __name__ == "__main__":
     os.environ["g_lvl"] = "3"
     v_prg = __name__ + "::read_db_rule"
     # rule_list = ["CG0373", "CG0378", "CG0379"]
-    rule_id = "CG0015"
+    # rule_id = "CG0015"
+    rule_id = "CG0100"
     db = 'library'
     ct = 'editor_rules_dev'
-    r = read_db_rule(rule_id=rule_id,db_name=db,ct_name=ct)
+    # r = read_db_rule(rule_id=rule_id,db_name=db,ct_name=ct)
+    # json.dump(r, sys.stdout, indent=4)
+    d_id = "50ab5646-f9a1-4fbb-b1ad-11462f5956fa"
+    r = read_db_rule(doc_id=d_id, db_name=db, ct_name=ct)
     json.dump(r, sys.stdout, indent=4)

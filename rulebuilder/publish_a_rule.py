@@ -7,6 +7,11 @@
 #     1. changed "Rule Identifier" to Rule_Identifier
 #     2. added step 4.1 to backup docs before replacing it 
 #   04/07/2023 (htu) - added get_db_rule 
+#   04/13/2023 (htu) - commented out step 4.112 (no deduplication)
+#   04/18/2023 (htu) - 
+#     1. added checking for dat_fdir as rule_dir 
+#     2. changed Rule_Identifier back to "Rule Identifier"
+#     3. added r_json parameter and removed get_db_rule
 #
 
 import os
@@ -20,7 +25,7 @@ from azure.cosmos.exceptions import CosmosResourceNotFoundError
 
 
 def publish_a_rule(rule_id = None, doc_id:str=None, rule_dir:str=None, 
-                   db_cfg = None, r_ids = None, get_db_rule:int=0):
+                   db_cfg = None, r_ids = None, r_json= None):
     """
     Publishes a rule to a Cosmos DB container.
 
@@ -43,11 +48,14 @@ def publish_a_rule(rule_id = None, doc_id:str=None, rule_dir:str=None,
     log_fn = os.getenv("log_fn") 
     v_msg = "Getting existing rule..."
     echo_msg(v_prg, v_stp, v_msg, 2)
+    load_dotenv()
 
     # 1.1 check rul_json_dir 
     v_stp = 1.1
     if rule_dir is None:
-        load_dotenv()
+        output_dir = os.getenv("dat_fdir")
+        rule_dir = output_dir + "/rules_json"
+    if rule_dir is None:
         rule_dir = os.getenv("rule_json_dir")
     if rule_dir is None:
         output_dir = os.getenv("output_dir")
@@ -79,10 +87,11 @@ def publish_a_rule(rule_id = None, doc_id:str=None, rule_dir:str=None,
     v_stp = 2.0 
     v_msg = "Get json document based on rule_id or doc_id..."
     echo_msg(v_prg, v_stp, v_msg, 3)
-    r_json = read_fn_rule(rule_id=rule_id, doc_id=doc_id, 
+    if r_json is None: 
+        r_json = read_fn_rule(rule_id=rule_id, doc_id=doc_id, 
                          rule_dir=rule_dir)
 
-    # 3.0 publish the documnet 
+    # 3.0 publish the document 
     v_stp = 3.0
     v_msg = "Get information from the document..." 
     echo_msg(v_prg, v_stp, v_msg, 3)
@@ -94,7 +103,7 @@ def publish_a_rule(rule_id = None, doc_id:str=None, rule_dir:str=None,
     document_id = new_document.get("id")
     v_stp = 3.1 
     if document_id is None:
-        v_msg = "Did not find documend_id."
+        v_msg = "Did not find document_id."
         echo_msg(v_prg, v_stp, v_msg, 0)
         return None 
     doc_link = f"dbs/{db}/colls/{ct}/docs/{document_id}"
@@ -112,7 +121,7 @@ def publish_a_rule(rule_id = None, doc_id:str=None, rule_dir:str=None,
               "publish_status": None}
     r_auth = r_json.get("json", {}).get("Authorities")
     r_ref = r_auth[0].get("Standards")[0].get("References")
-    r_id = r_ref[0].get("Rule_Identifier",{}).get("Id")
+    r_id = r_ref[0].get("Rule Identifier",{}).get("Id")
     core_status = r_json.get("json", {}).get("Core", {}).get("Status")
     df_row.update({"rule_id": r_id})
     df_row.update({"core_id": core_id} )
@@ -128,9 +137,12 @@ def publish_a_rule(rule_id = None, doc_id:str=None, rule_dir:str=None,
     # print(r_json["json"]) 
     # for authority in r_json['json']['Authorities']: 
     for authority in r_auth: 
-        for standard in authority['Standards']:
-            v_vs.append(standard['Version'])
-    v_vers = ", ".join(v_vs)
+        for standard in authority.get('Standards'):
+            v_1 = standard.get('Version')
+            if v_1 is not None: 
+                v_vs.append(v_1)
+    if len(v_vs) > 0: 
+        v_vers = ", ".join(v_vs)
     df_row.update({"version": v_vers})
 
     # 4.0 add or replace document
@@ -139,7 +151,7 @@ def publish_a_rule(rule_id = None, doc_id:str=None, rule_dir:str=None,
     echo_msg(v_prg, v_stp, v_msg, 3)
 
     v_stp = 4.1
-    v_msg = "Backing up the docuemnt first..."
+    v_msg = "Backing up the document first..."
     fn_path = os.path.dirname(log_fn)
     echo_msg(v_prg, v_stp, v_msg, 3)
     if r_ids is not None:
@@ -158,9 +170,9 @@ def publish_a_rule(rule_id = None, doc_id:str=None, rule_dir:str=None,
                     json.dump(e_doc, f, indent=4)
                 # Delete the existing document
                 v_stp = 4.112
-                ctc.delete_item(item=e_doc, partition_key=d_id)
-                v_msg = f" . Document with id {d_id} deleted."
-                echo_msg(v_prg, v_stp, v_msg, 3)
+                # ctc.delete_item(item=e_doc, partition_key=d_id)
+                # v_msg = f" . Document with id {d_id} deleted."
+                # echo_msg(v_prg, v_stp, v_msg, 3)
         r_status = "Added" if doc_cnt == 0 else "Replaced" 
     else:
         v_stp = 4.12
@@ -237,11 +249,11 @@ if __name__ == "__main__":
     # d_id = "9959136a-523f-4546-9520-ffa22cda8867"     # CG0006
     d_id = "6161d4d5-6c96-47e1-baeb-4e70b1ffed46"       # CG0443
     # r_rst = publish_a_rule(doc_id=d_id, db_cfg=cfg)
-    # print(f"Stauts: {r_rst}")
+    # print(f"Status: {r_rst}")
     # json.dump(r_2, sys.stdout, indent=4)
 
     # Test case 3: Provide both rule and doc IDs
     d_id = "8e4ce5f6-5d7d-420c-887d-26c09b89b793"   # CG0008
     # r_rst = publish_a_rule(rule_id=r_id, doc_id=d_id, db_cfg=cfg)
-    # print(f"Stauts: {r_rst}")
+    # print(f"Status: {r_rst}")
     # json.dump(r_3, sys.stdout, indent=4)

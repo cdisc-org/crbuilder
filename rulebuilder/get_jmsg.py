@@ -3,6 +3,8 @@
 # History: MM/DD/YYYY (developer) - description
 #   03/21/2023 (htu) - extracted out from get_desc 
 #   03/22/2023 (htu) - added exist_rule_data 
+#   04/10/2023 (htu) - added r_std 
+#   04/14/2023 (htu) - fixed a bug - missing "Outcome" while getting the Message
 #
 
 import pandas as pd
@@ -11,17 +13,17 @@ from rulebuilder.echo_msg import echo_msg
 from rulebuilder.replace_operator import replace_operator
 
 
-def get_jmsg(rule_data, exist_rule_data: dict = {}):
+def get_jmsg(rule_data, exist_rule_data: dict = {}, r_std:str=None):
     """
     Returns a JSON message string based on the given rule data.
 
-    Paramgers:
+    Parameters:
     ----------
     rule_data: dataframe 
         A Pandas DataFrame containing the rule data.
         
     existing_rule_data: dict 
-        a data frame containng all the records for a rule that already developed. It 
+        a data frame containing all the records for a rule that already developed. It 
         can be read from the existing rule folder using get_existing_rule. 
 
     Returns:
@@ -34,8 +36,13 @@ def get_jmsg(rule_data, exist_rule_data: dict = {}):
     v_stp = 1.0
     v_msg = "Getting Message for json.Message..."
     echo_msg(v_prg, v_stp, v_msg, 3)
-    r_str = exist_rule_data.get("json", {}).get("Message")
-    if r_str is None: 
+    r_str = exist_rule_data.get("json", {}).get("Outcome",{}).get("Message")
+    if r_str is not None:
+       return r_str
+    
+    r_std = os.getenv("r_standard") if r_std is None else r_std
+    r_std = r_std.upper()
+    if r_std.upper() == "SDTM_V2_0":
         r_condition = rule_data.iloc[0]["Condition"]
         r_rule = rule_data.iloc[0]["Rule"]
         # Debugging print statement
@@ -52,6 +59,13 @@ def get_jmsg(rule_data, exist_rule_data: dict = {}):
         v_stp = 1.4
         v_msg = " . r_desc3: " + str(r_str)        # Debugging print statement
         echo_msg(v_prg, v_stp, v_msg, 4)
+        # Issue: https://github.com/cdisc-org/crbuilder/issues/3 so set it to empty 
+        r_str = ""
+    elif r_std.upper() == "FDA_VR1_6":
+        r_str = rule_data.iloc[0]["FDA Validator Rule Message"]
+    else:
+        r_str = ""
+
     return r_str
 
 

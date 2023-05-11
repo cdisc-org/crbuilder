@@ -3,18 +3,22 @@
 # History: MM/DD/YYYY (developer) - description
 #   04/03/2023 (htu) - initial coding by extracting code from proc_sdtm_rules 
 #   04/07/2023 (htu) - used getenv to get job_id and sub_dir
+#   04/10/2023 (htu) - removed some redundant codes 
+#   04/14/2023 (htu) - added create_dir method and simplified the coding 
+#   04/18/2023 (htu) - added dat_fdir 
+#   04/19/2023 (htu) - extracted out create_dir to create_a_dir 
 #
 
 import os 
 import datetime as dt
 from dotenv import load_dotenv
-# from datetime import datetime, timezone
 from rulebuilder.echo_msg import echo_msg
+from rulebuilder.create_a_dir import create_a_dir
 
 
 def create_log_dir(log_dir: str = None, job_id: str = None, 
                    sub_dir: str = None, wrt2log: int = 1,
-                   fn_root: str = "log",fn_sufix:str ="xlsx"):
+                   fn_root: str = "log",fn_suffix:str ="xlsx"):
     v_prg = __name__
 
     # 1.0 check inputs 
@@ -24,14 +28,15 @@ def create_log_dir(log_dir: str = None, job_id: str = None,
     load_dotenv()
     r_dir = os.getenv("r_dir")
     tm = dt.datetime.now()
-    job_id = tm.strftime("J%H%M%S")
+    job_id = os.getenv("job_id") if job_id is None else job_id 
+    job_id = tm.strftime("J%H%M%S") if job_id is None else job_id 
     s_dir = tm.strftime("/%Y/%m/%d")
     sub_dir = f"{s_dir}/{job_id}"
     r_dir = "." if r_dir is None else r_dir
     log_dir = os.getenv("log_dir") if log_dir is None else log_dir
     log_dir = f"{r_dir}/logs" if log_dir is None else log_dir 
-    log_f1 = f"{log_dir}{s_dir}/job-{job_id}-log1.txt"
-    log_f2 = f"{log_dir}{s_dir}/job-{job_id}-log2.txt"
+    log_f1 = f"{log_dir}{sub_dir}/job-{job_id}-log1.txt"
+    log_f2 = f"{log_dir}{sub_dir}/job-{job_id}-log2.txt"
 
     os.environ["job_id"] = job_id
     os.environ["s_dir"] = s_dir
@@ -53,18 +58,8 @@ def create_log_dir(log_dir: str = None, job_id: str = None,
         echo_msg(v_prg, v_stp, v_msg, 0)
         return r_cfg 
     r_cfg["log_dir"] = log_dir
-    
-    if job_id is None: 
-        job_id = os.getenv("job_id")
-        if job_id is None: 
-            job_id = tm.strftime("%Y%m%d_%H%M%S")
-        r_cfg["job_id"] = job_id
-
-    if sub_dir is None:
-        sub_dir = tm.strftime("/%Y/%m/%d") + job_id
-        r_cfg["sub_dir"] = sub_dir
-    
-    # get enviroment setting for write2log 
+        
+    # get environment setting for write2log 
     w2log = 0 if w2log is None else int(w2log)
     r_cfg["wrt2log"] = wrt2log 
     # we use the input from this as higher priority
@@ -72,30 +67,34 @@ def create_log_dir(log_dir: str = None, job_id: str = None,
         os.environ["write2log"] = "1"
 
     # 2.0 check log_dir 
-    if not os.path.exists(log_dir):
-        v_stp = 2.1
-        v_msg = f"Could not find log dir: {log_dir}"
-        echo_msg(v_prg, v_stp, v_msg, 3)
-        if wrt2log > 0: 
-            v_msg = f"Making dir - {log_dir}"
-            echo_msg(v_prg, v_stp, v_msg, 3)
-            os.makedirs(log_dir)
+    create_a_dir(v_prg=v_prg, v_stp=2.1, v_dir=log_dir, wrt2log=wrt2log)
 
-    log_fdir = log_dir + sub_dir
+    log_fdir = f"{log_dir}{sub_dir}/logs"
+    dat_fdir = f"{log_dir}{sub_dir}/data"
+    os.environ["dat_fdir"] = dat_fdir
+    create_a_dir(v_prg=v_prg, v_stp=2.2, v_dir=log_fdir, wrt2log=wrt2log)
+    create_a_dir(v_prg=v_prg, v_stp=2.3, v_dir=dat_fdir, wrt2log=wrt2log)
     r_cfg["log_fdir"] = log_fdir
-    if not os.path.exists(log_fdir):
-        v_stp = 2.2
-        v_msg = f"Could not find log dir: {log_fdir}"
-        echo_msg(v_prg, v_stp, v_msg, 3)
-        if wrt2log > 0: 
-            v_msg = f"Making dir - {log_fdir}"
-            echo_msg(v_prg, v_stp, v_msg, 3)
-            os.makedirs(log_fdir)
-    
-    fn=f"{fn_root}-{job_id}.{fn_sufix}"
+    r_cfg["dat_fdir"] = dat_fdir
+
+    fn=f"{fn_root}-{job_id}.{fn_suffix}"
     r_cfg["file_name"]=fn
     r_cfg["fn_path"]=f"{log_fdir}/{fn}"
-     
+
+    # 3.0 Check rule output folders
+    # existing_rule_dir = ./data/output/orig_rules
+    #json_rule_dir = ./data/output/orig_json
+    #output_dir = ./data/output
+    e_rule_dir = os.getenv("existing_rule_dir")
+    j_rule_dir = os.getenv("json_rule_dir")
+    output_dir = os.getenv("output_dir")
+
+    if e_rule_dir is not None:
+        create_a_dir(v_prg=v_prg, v_stp=3.1, v_dir=e_rule_dir, wrt2log=wrt2log)
+    if j_rule_dir is not None:
+        create_a_dir(v_prg=v_prg, v_stp=3.2, v_dir=j_rule_dir, wrt2log=wrt2log)
+    if output_dir is not None:
+        create_a_dir(v_prg=v_prg, v_stp=3.3, v_dir=output_dir, wrt2log=wrt2log)
     
     return r_cfg
 
@@ -103,19 +102,19 @@ def create_log_dir(log_dir: str = None, job_id: str = None,
 if __name__ == "__main__":
     load_dotenv()
     log_dir = os.getenv("log_dir")
-    tm = dt.datetime.now(dt.timezone.utc)
+    tm = dt.datetime.now()
 
     # Test case 1: Use Rule ID
-    fdir = log_dir + tm.strftime("/%Y/%m/%Y%m%d_%H%M%S")
+    fdir = log_dir + tm.strftime("/%Y/%m/%d/J%H%M%S")
     d1 = create_log_dir()
-    print(f"File Paht: {d1['fn_path']}")
+    print(f"File Path: {d1['fn_path']}")
     assert fdir == d1["log_fdir"] 
 
     # Test case 2: Use Doc ID
     j_id = "a1234"
-    fdir = log_dir + tm.strftime("/%Y/%m/") + j_id 
+    fdir = log_dir + tm.strftime("/%Y/%m/%d/") + j_id 
     d2 = create_log_dir(job_id = j_id )
-    print(f"File Paht: {d2['fn_path']}") 
+    print(f"File Path: {d2['fn_path']}") 
     assert fdir == d2["log_fdir"] 
 
     print("All tests run successfully")

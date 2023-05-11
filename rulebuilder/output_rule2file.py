@@ -8,16 +8,18 @@
 #   03/23/2023 (htu) - added echo_msg to display dir and file creation 
 #   03/24/2023 (htu) - added "status" to track if a rule a new rule
 #   04/04/2023 (htu) - added rename_keys for json file 
+#   04/18/2023 (htu) - 
+#    1. default output_dir to None so it gets from dat_fdir variable 
+#    2. commented out rename_keys 
 #
 
 import os
 import json
 from rulebuilder.echo_msg import echo_msg
-from rulebuilder.rename_keys import rename_keys
-from ruamel.yaml import YAML
+# from rulebuilder.rename_keys import rename_keys
 
 
-def output_rule2file(rule_id, json_data, yaml_data, output_dir) -> None:
+def output_rule2file(rule_id, json_data, yaml_data, output_dir = None) -> None:
     """
     Writes YAML and JSON data to files in the specified output directory.
 
@@ -31,6 +33,9 @@ def output_rule2file(rule_id, json_data, yaml_data, output_dir) -> None:
     None.
     """
     v_prg = __name__
+    if output_dir is None:
+        output_dir = os.getenv("dat_fdir")
+
     # Form a file name 
     v_status = json_data.get("status")
     json_data.pop("status")             # remove the status fro dict 
@@ -55,8 +60,8 @@ def output_rule2file(rule_id, json_data, yaml_data, output_dir) -> None:
     # Write JSON data to a file
     j_data = json_data
     # we need to change the spaces in keys to underscores 
-    rename_keys(j_data, ' ', '_')
-    j_data["content"] = yaml_data
+    # rename_keys(j_data, ' ', '_')
+    # j_data["content"] = yaml_data
     j_path = output_dir + '/rules_json'
     j_fn = rule_id + "-" + v_status + ".json"
     fn_json = j_path + '/' + j_fn

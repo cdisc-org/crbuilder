@@ -10,6 +10,8 @@
 #   03/29/2023 (htu) - used new rename_keys function to reserve comments
 #   03/30/2023 (htu) - check and test the commentMap
 #   04/05/2023 (htu) - added logic to skip adding comments 
+#   04/10/2023 (htu) - added r_std input parameter 
+#   04/18/2023 (htu) - commented out rename_keys 
 # 
 
 
@@ -21,9 +23,9 @@ from rulebuilder.echo_msg import echo_msg
 from rulebuilder.read_rules import read_rules
 from rulebuilder.rename_keys import rename_keys 
 from rulebuilder.get_creator_id import get_creator_id
-from rulebuilder.proc_each_sdtm_rule import proc_each_sdtm_rule
+from rulebuilder.proc_each_yaml import proc_each_yaml
 
-def build_rule_yaml (df_rule_data, js_rule_data):
+def build_rule_yaml (df_rule_data, js_rule_data, r_std: str = None):
     """
     Given a pandas DataFrame `df_rule_data` containing information about a SDTM rule,
     and a dictionary `js_rule_data` containing the JSON representation of that rule,
@@ -38,6 +40,8 @@ def build_rule_yaml (df_rule_data, js_rule_data):
         str: A string containing the YAML representation of the rule, including comments
         based on the values in `df_rule_data`.
     """
+    r_std = os.getenv("r_standard") if r_std is None else r_std
+    r_std = r_std.upper()
     y1 = YAML()
     y1.indent(mapping=2, sequence=4, offset=2)
     y1.preserve_quotes = True
@@ -51,14 +55,16 @@ def build_rule_yaml (df_rule_data, js_rule_data):
     # print(f"--------------- D_YAML1 ---------------")
     # print(type(d_yaml))
     # y1.dump(d_yaml, sys.stdout)
-    rename_keys(d_yaml, '_', ' ')
+    # rename_keys(d_yaml, '_', ' ')     # commented out on 4/18/2023
     # print(f"--------------- D_YAML2 ---------------")
     # print(type(d_yaml))
     # y1.dump(d_yaml, sys.stdout)
-    
-    s_cmts  = "# Variable: " + df_data.iloc[0]["Variable"] + "\n"
-    s_cmts += "# Condition: " + df_data.iloc[0]["Condition"] + "\n"
-    s_cmts += "# Rule: " + df_data.iloc[0]["Rule"] + "\n"
+    if r_std in ("SDTM_V2_0"):
+        s_cmts  = "# Variable: " + df_data.iloc[0]["Variable"] + "\n"
+        s_cmts += "# Condition: " + df_data.iloc[0]["Condition"] + "\n"
+        s_cmts += "# Rule: " + df_data.iloc[0]["Rule"] + "\n"
+    else:
+        s_cmts = ""
 
     # convert YAML into string
     s_yl = yaml.YAML()
@@ -88,7 +94,7 @@ def build_rule_yaml (df_rule_data, js_rule_data):
 if __name__ == "__main__":
     # set input parameters 
     os.environ["g_lvl"] = "1"
-    v_prg = __name__ + "::proc_sdtm_rules"
+    v_prg = __name__ + "::build_rule_yaml"
     creator_url = "https://rule-editor.cdisc.org/.auth/me"
     r_dir = "/Volumes/HiMacData/GitHub/data/core-rule-builder"
     yaml_file =  r_dir + "/data/target/SDTM_and_SDTMIG_Conformance_Rules_v2.0.yaml"
@@ -119,6 +125,6 @@ if __name__ == "__main__":
     echo_msg(v_prg, v_stp, "Test Case 02: Basic Parameter", 1)
     rule_id = "CG0378"
     rule_data = df_data[df_data["Rule ID"] == rule_id]
-    a_json = proc_each_sdtm_rule(
+    a_json = proc_each_yaml(
         rule_data, json_obj, rule_id, existing_rule_dir, cnt_published)
     build_rule_yaml(rule_data, a_json)

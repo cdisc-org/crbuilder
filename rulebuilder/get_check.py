@@ -47,8 +47,12 @@ def get_check(rule_data, exist_rule_data: dict = {}):
         echo_msg(v_prg, v_stp, v_msg,0)
         return {}
 
+    v_stp = 2.1 
     # r_json = exist_rule_data.get("json", {}).get("Check")
-    r_json = exist_rule_data.get("Check")
+    r_json = exist_rule_data.get("json",{}).get("Check")
+    v_msg = f"Check: {r_json}"
+    echo_msg(v_prg, v_stp, v_msg,8)
+
     if r_json is not None:
         return r_json
 

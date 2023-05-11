@@ -10,9 +10,12 @@
 #     2. added g_msg_lvl and g_log_lvl
 #     3. added i and n and level 1 and 2 logging 
 #   04/08/2023 (htu) - writing v_msg to all the log files 
-#
+#   05/05/2023 (htu) - added msg_type and msg_txt to print object type
+#   05/06/2023 (htu) - added more cases for detecting message type and logging
+# 
 import os
 import re
+import pandas as pd 
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 
@@ -73,6 +76,17 @@ def echo_msg(prg, step, msg, lvl=0, fn=None, i:int=0, n:int=0):
     and non-web environments.
 
     """
+
+    def dump_yml(prg, step, msg, fmt, fh, i:int=1, n:int=1):
+        msg_txt = fmt % (prg, step, f"{i}/{n}:\n")
+        y = YAML()
+        y.indent(mapping=2, sequence=4, offset=2)
+        y.preserve_quotes = True
+        fh.write(msg_txt)
+        y.dump(msg, fh)
+        # fh.write("\n\n")
+    # End of dump_yml
+
     fmt = "%s: %.3f - %s"
     f1 = "<h2>%s</h2>"
     f2 = '<font color="%s">%s</font>'
@@ -94,7 +108,20 @@ def echo_msg(prg, step, msg, lvl=0, fn=None, i:int=0, n:int=0):
     g_msg_lvl = int(g_msg_lvl) if g_msg_lvl else 1
     g_log_lvl = int(g_log_lvl) if g_log_lvl else 1
     ofn = fn if fn else logfn
-    if not msg or msg is None:
+    b1 = True if (isinstance(msg, pd.DataFrame) and msg.empty) else False
+    b2 = msg is None
+    # b3 = not msg 
+    if b1 or b2:
+        msg_type = type(msg) 
+        m0 = fmt % (prg, step, f"Empty MSG:")
+        m1 = f"from (Object Type - {msg_type})"
+        m2 = "-" * len(m1)
+        msg_txt = f"{m0}\n{m1}\n{m2}\n\n" 
+        if ofn and wrt2log >= 1 and int(g_log_lvl) > 5:
+             with open(ofn, "a") as f:
+                f.write(msg_txt)
+        else:
+            print(msg_txt)
         return None
 
     # hide passwords
@@ -117,15 +144,18 @@ def echo_msg(prg, step, msg, lvl=0, fn=None, i:int=0, n:int=0):
             print("<br>")
 
     if lvl <= int(g_msg_lvl):
-        print(fmt % (prg, step, msg))
+        if i > 0:
+            print(fmt % (prg, step, f"({i}/{n}): {msg}"))
+        else: 
+            print(fmt % (prg, step, msg))
     if log_f1 and wrt2log >= 1:
-        if not os.path.isfile(log_f1):
+        if not os.path.isfile(log_f1) and lvl == 1:
             print(f"*L1 Logging to: {log_f1}" )
         if lvl <= 1:
             with open(log_f1, "a") as f:
                 f.write(fmt % (prg, step, f"{msg}\n"))
     if log_f2 and wrt2log >= 1:
-        if not os.path.isfile(log_f2):
+        if not os.path.isfile(log_f2) and lvl == 2:
             print(f"*L2 Logging to: {log_f2}" )
         if lvl <= 2:
             with open(log_f2, "a") as f:
@@ -133,24 +163,51 @@ def echo_msg(prg, step, msg, lvl=0, fn=None, i:int=0, n:int=0):
 
     if lvl <= int(g_log_lvl):
         if ofn and wrt2log >= 1:
+            msg_type = type(msg) 
+            m1 = f"(Object Type: {msg_type})"
+            m2 = "-" * len(m1)
+            msg_txt = f"{m1}\n{m2}\n" 
+
             if not os.path.isfile(ofn): 
                 v_msg = f"  {i}/{n} - Logging to: {ofn}"
                 print(v_msg)
-                with open(log_f1, "a") as f:
-                    f.write(f"{v_msg}\n")
-                with open(log_f2, "a") as f:
-                    f.write(f"{v_msg}\n")
-                with open(ofn, "a") as f:
-                    f.write(f"{v_msg}\n")
-            if isinstance(msg, (dict, CommentedMap, CommentedSeq)):
-                y = YAML()
-                y.indent(mapping=2, sequence=4, offset=2)
-                y.preserve_quotes = True
-                with open(ofn, "a") as f: 
-                    y.dump(msg, f)
-            else: 
-                with open(ofn, "a") as f:
-                    f.write(fmt % (prg, step, f"{msg}\n"))
+                if log_f1 is not None:
+                    with open(log_f1, "a") as f:
+                        f.write(f"{v_msg}\n")
+                if log_f2 is not None: 
+                    with open(log_f2, "a") as f:
+                        f.write(f"{v_msg}\n")
+                if ofn is not None: 
+                    with open(ofn, "a") as f:
+                        f.write(f"{v_msg}\n")
+            with open(ofn, "a") as f:
+                if int(g_log_lvl) > 5:
+                    f.write(msg_txt)
+                if isinstance(msg, (dict, CommentedMap, CommentedSeq)):
+                    dump_yml(prg, step, msg, fmt, fh=f)
+                elif isinstance(msg, pd.DataFrame):
+                    m0 = fmt % (prg, step, f"pd.DataFrame:\n")
+                    f.write(m0)
+                    f.write(msg.to_string())
+                    f.write("\n")
+                elif isinstance(msg, (list)):
+                    msg_n = len(msg)
+                    for i in range(msg_n):
+                        lst = msg[i] 
+                        if isinstance(lst, (dict, CommentedMap, CommentedSeq)):
+                            dump_yml(prg, step, lst, fmt, fh=f, i=i+1, n=msg_n)
+                        elif isinstance(lst, pd.DataFrame):
+                            m0 = fmt % (prg, step, f"pd.DataFrame ({i}/{msg_n}):\n")
+                            f.write(m0)
+                            f.write(lst.to_string())
+                            f.write("\n")
+                        else: 
+                            f.write(fmt % (prg, step, f"{msg}\n"))
+                else: 
+                    if i > 0:
+                        f.write(fmt % (prg, step, f"({i}/{n}) {msg}\n"))
+                    else:
+                        f.write(fmt % (prg, step, f"{msg}\n"))
     return None 
 
 

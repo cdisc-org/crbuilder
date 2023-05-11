@@ -8,13 +8,24 @@
 #   04/07/2023 (htu) - 
 #     1. added job_id and populated values for doc_cnt and dup_ids 
 #     2. added db_cfg 
+#   04/11/2023 (htu) - 
+#     1. added more debug message in step 4.12
+#     2. added deep_match 
+#     3. added step 4.32 to write out r_ids 
+#   04/14/2023 (htu) - added r_ids[r_id]["status"]
+#   04/18/2023 (htu) - added step 4.32 
+#   04/19/2023 (htu) - sorted r_ids and df_log 
 #
 import os
+import re
+import json 
 import pandas as pd
 import datetime as dt
-from rulebuilder.get_db_cfg import get_db_cfg
-from rulebuilder.echo_msg import echo_msg
 from dotenv import load_dotenv
+from rulebuilder.echo_msg import echo_msg
+from rulebuilder.get_db_cfg import get_db_cfg
+from rulebuilder.get_rule_ids import get_rule_ids
+from rulebuilder.create_a_dir import create_a_dir
 from azure.cosmos.exceptions import CosmosResourceNotFoundError
 
 
@@ -46,13 +57,30 @@ def get_doc_stats(qry: str = None, db: str = 'library',
 
     # . 2.0 get DB configuration
     v_stp = 2.0
-    v_msg = "Get DB configuration..."
+    v_msg = f"Get DB configuration ({db}.{ct})..."
     echo_msg(v_prg, v_stp, v_msg, 2)
     if db_cfg is None: 
+        v_stp = 2.1 
+        # print("Getting CFG....")
         cfg = get_db_cfg(db_name=db, ct_name=ct)
     else: 
+        v_stp = 2.2 
         cfg = db_cfg 
+    v_msg = f"DB: {db}, CT: {ct}"
+    echo_msg(v_prg, v_stp, v_msg, 3)
+
     ctc = cfg["ct_conn"]
+
+    def deep_match(data, pattern, doc_id=None):
+        for key, value in data.items():
+            if isinstance(value, dict):
+                deep_match(value, pattern)
+            else:
+                match = re.search(pattern, str(value))
+                if match:
+                    v_stp = 2.3
+                    v_msg = f"Match found for {key}: {match.group()} in {doc_id}"
+                    echo_msg(v_prg, v_stp, v_msg, 5)
 
     # 3.0 Execute the query
     doc_list = list()
@@ -70,79 +98,68 @@ def get_doc_stats(qry: str = None, db: str = 'library',
         return
 
     # 4.0 process the results
-    df_log = pd.DataFrame(columns=["rule_id", "core_id",  "user_id", "guid_id", 
-                                   "created", "changed", "rule_status", "version", 
-                                   "doc_cnt", "dup_ids"])
+    df_log = pd.DataFrame(columns=["rule_id", "core_id",  
+                                   "combined_id", "user_id", "guid_id",
+                                   "created", "changed", "rule_status", "version",
+                                   "rule_cnt", "rule_ids",
+                                   "doc_cnt", "dup_ids"])   
     v_stp = 4.1
     v_msg = "Processing each doc..."
-    echo_msg(v_prg, v_stp, v_msg, 2)
+    echo_msg(v_prg, v_stp, v_msg, 3)
     r_ids = {}                  # contain a list of rule ids 
-    r_key_with_space = {}
     rows = []
+    v_re1 = r'Id:\s*(\w+)\s*\r'
+    tot_docs = len(doc_list)
+    doc_cnt  = 0 
     for i in doc_list:
-        df_row = {"rule_id": None, "core_id": None,  "user_id": None, "guid_id": None,
-              "created": None, "changed": None, "rule_status": None, "version": None,
-              "doc_cnt":None, "dup_ids": None}
-
+        doc_cnt += 1 
         doc_id = i.get("id")
         core_id = i.get("json", {}).get("Core", {}).get("Id")
-        core_status = i.get("json", {}).get("Core", {}).get("Status")
-        # get rule id 
-        try: 
-            r_auth = i.get("json", {}).get("Authorities")
-            r_ref = r_auth[0].get("Standards")[0].get("References")
-            r_id = r_ref[0].get("Rule_Identifier", {}).get("Id")    # rule id 
-        except Exception as e:
-            print(f"Error: {e}\n . DocID: {doc_id},  CoreID: {core_id}")
-            r_id = None 
-        if r_id is None:
-            r_id = r_ref[0].get("Rule Identifier", {}).get("Id")    # wrong way to have rule id 
-            if r_id is not None:
-                if r_id not in r_key_with_space.keys():
-                    r_key_with_space[r_id] = []
-                r_key_with_space[r_id].append(doc_id)
-        if r_id is None:                 # if rule id is still None,
-            r_id = "NoRuleID"            # we assigned "NoRuleID" to it
-        if r_id not in r_ids.keys():
-            r_ids[r_id] = {"cnt":0, "ids": []}
-        r_ids[r_id]["cnt"] += 1
-        r_ids[r_id]["ids"].append(doc_id)
-        df_row.update({"rule_id": r_id})
-        # get a list of IG versions 
-        v_vs = []
-        v_vers = None
-        if r_auth is not None: 
-            for authority in r_auth:
-                for standard in authority['Standards']:
-                    v_vs.append(standard['Version'])
-        v_vers = ", ".join(v_vs)
-        df_row.update({"version": v_vers})
+        v_msg = f" {doc_cnt}/{tot_docs} To get Rule ID from [{core_id}] {doc_id}..."
+        echo_msg(v_prg, v_stp, v_msg, 5)
+        if core_id is None or len(core_id) == 0:
+            echo_msg(v_prg, v_stp, i, 9)
 
-        df_row.update({"core_id": core_id})
-        df_row.update({"user_id": i.get("creator", {}).get("id")})
-        df_row.update({"guid_id": doc_id})
-        df_row.update({"created": i.get("created")})
-        df_row.update({"changed": i.get("changed")})
-        df_row.update({"rule_status": core_status})
+        rule_id = None
+        core_status = i.get("json", {}).get("Core", {}).get("Status")
+        df_row = get_rule_ids(r_data=i)
+        rule_id = df_row.get("rule_id")
+        id_str = df_row.get("rule_ids")
+        id_list = []
+        if id_str is not None: 
+            id_list = id_str.split(",")
+        for r_id in id_list:  
+            if r_id not in r_ids.keys():
+                r_ids[r_id] = {"cnt":0, "ids":[], "status":[]}
+            r_ids[r_id]["cnt"] += 1
+            r_ids[r_id]["ids"].append(doc_id)
+            r_ids[r_id]["status"].append(core_status)
+        if rule_id is None or rule_id == "NoRuleID":
+            deep_match(i, v_re1, doc_id)
         df_row.update({"doc_cnt": r_ids[r_id]["cnt"]})
         df_row.update({"dup_ids": r_ids[r_id]["ids"]})
-
-        rows.append(df_row)
+        if rule_id is not None: 
+            rows.append(df_row)
 
     # End of for i in doc_list
 
     v_stp = 4.2
     v_msg = "Get doc cnt and dup doc ids..."
-    echo_msg(v_prg, v_stp, v_msg, 2)
-
+    echo_msg(v_prg, v_stp, v_msg, 3)
 
     df_log = pd.DataFrame.from_records(rows)
     grouped_data = df_log.groupby("rule_id")
+    df_sorted = df_log.sort_values(by='rule_id')
 
     for rule_id, grp in grouped_data:
         if grp.shape[0] > 1:  
             v_msg = f"RuleID: {rule_id}:\n{grp}"
-            echo_msg(v_prg, v_stp, v_msg, 6)
+            echo_msg(v_prg, v_stp, v_msg, 5)
+    
+    # Sort the r_ids dict object 
+    sorted_keys = sorted(r_ids.keys())
+    sorted_dict = {k: r_ids[k] for k in sorted_keys}
+
 
     v_stp = 4.3 
     if wrt2file == 1: 
@@ -152,33 +169,38 @@ def get_doc_stats(qry: str = None, db: str = 'library',
         tm = dt.datetime.now()
         s_dir = tm.strftime("/%Y/%m/%d/")
         if job_id is None: 
-            job_id = tm.strftime("%Y%m%d_%H%M%S")
-        rst_fn = log_dir + s_dir + f"job-{job_id}-stat.xlsx"
+            job_id = tm.strftime("S%H%M%S")
+        t_dir = f"{log_dir}{s_dir}/{job_id}"
+        create_a_dir(v_prg=v_prg, v_stp=4.32, v_dir=t_dir,wrt2log=wrt2file)
+
+        rst_fn = f"{t_dir}/job-{job_id}-stat.xlsx"
+        jsn_fn = f"{log_dir}{s_dir}/{job_id}/job-{job_id}-stat.json"
         v_msg = "Output result to " + rst_fn + "..." 
         echo_msg(v_prg, v_stp, v_msg,2)
-        df_log.to_excel(rst_fn, index=False)
+        df_sorted.to_excel(rst_fn, index=False)
+        v_stp = 4.33
+        with open(jsn_fn, 'w') as f:
+            v_msg = f"Writing to: {jsn_fn}"
+            echo_msg(v_prg, v_stp, v_msg, 3)
+            json.dump(sorted_dict, f, indent=4)
     else:
-        v_stp = 4.32
+        v_stp = 4.34
 
     n = len(r_ids)
-    for i in r_ids:
-        m = len(r_ids[i]["ids"])
+    for i in sorted_dict:
+        m = len(sorted_dict[i]["ids"])
         if m > 1:
-            v_msg = f"{i}({m}/{n}): {r_ids[i]['ids']}"
+            v_msg = f"{i}({m}/{n}): {sorted_dict[i]['ids']}"
             echo_msg(v_prg, v_stp, v_msg, 5)
     # n2 = len(r_key_with_space)
     # print(f"Docs with space keys ({n2}):\n{r_key_with_space}")
-    return r_ids 
+    return sorted_dict
 
 
 # Test cases
 if __name__ == "__main__":
     # set input parameters
-    os.environ["g_lvl"] = "5"
-    v_prg = __name__ + "::proc_sdtm_rules"
-    # rule_list = ["CG0373", "CG0378", "CG0379"]
-    rule_list = ["CG0001"]
-    # rule_list = []
-    q1 = "select * from c where not is_defined(c.creator)"
-    q2 = "select * from c"
-    get_doc_stats()
+    os.environ["g_msg_lvl"] = "5"
+    v_prg = __name__ + "::get_doc_stats"
+    # get_doc_stats(ct="editor_rules_dev_20230411",wrt2file=1)
+    get_doc_stats(ct="editor_rules_dev",wrt2file=1)

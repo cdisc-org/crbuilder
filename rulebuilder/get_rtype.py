@@ -7,6 +7,9 @@
 #   03/21/2023 (htu) -
 #     10. Rule Type and Sensitivity should be left null
 #   03/22/2023 (htu) - added exist_rule_data
+#   04/10/2023 (htu) - added r_std 
+#   04/18/2023 (htu) - changed Rule_Type to "Rule Type"
+#   04/18/2023 (htu) - added code to check "Rule_Type" value as well
 #    
 
 import re 
@@ -17,12 +20,12 @@ from rulebuilder.read_rules import read_rules
 # from rulebuilder.get_existing_rule import get_existing_rule
 
 
-def get_rtype(rule_data, exist_rule_data: dict = {}):
+def get_rtype(rule_data, exist_rule_data: dict = {}, r_std:str=None):
     """
     ===============
     get_rtype
     ===============
-    This method builds the json.Rule_Type element in the core rule.
+    This method builds the json."Rule Type" element in the core rule.
 
     Parameters:
     -----------
@@ -37,7 +40,7 @@ def get_rtype(rule_data, exist_rule_data: dict = {}):
 
     returns
     -------
-        r_str: a string for json.Rule_Type
+        r_str: a string for json."Rule Type"
         
         possible rule type: 
         - Dataset Contents Check against Define XML and Library Metadata
@@ -60,16 +63,26 @@ def get_rtype(rule_data, exist_rule_data: dict = {}):
     v_stp = 1.0
     v_msg = "Setting parameters..."
     echo_msg(v_prg, v_stp, v_msg, 3)
+    r_std = os.getenv("r_standard") if r_std is None else r_std
+    r_std = r_std.upper() 
     # if not rule_data.empty: 
     #    return None
 
     v_stp = 1.1
-    v_msg = "Input parameter rule_data is empty."
-    if rule_data.empty:
-        echo_msg(v_prg, v_stp, v_msg, 0)
-        return None
-    r_str = exist_rule_data.get("json", {}).get("Rule_Type")
+    # if rule_data.empty:
+    #     v_msg = "Input parameter rule_data is empty."
+    #     echo_msg(v_prg, v_stp, v_msg, 0)
+    #     return None
+
+    r_str = exist_rule_data.get("json", {}).get("Rule Type")
     if r_str is None: 
+        r_str = exist_rule_data.get("json", {}).get("Rule_Type")
+    if r_str is not None:
+        return r_str
+    
+    r_str = "Record Data"
+    pattern = r"^(Dataset Metadata Check|Define-XML)"
+    if r_std in ("SDTM_V2_0"):
         r_condition = rule_data.iloc[0]["Condition"]
         # r_rule = rule_data.iloc[0]["Rule"]
         if r_condition is None:
@@ -77,8 +90,6 @@ def get_rtype(rule_data, exist_rule_data: dict = {}):
             v_msg = "No Condition is found in the rule definition."
             echo_msg(v_prg, v_stp, v_msg, 0)
             return None
-        r_str = "Record Data"
-        pattern = r"^(Dataset Metadata Check|Define-XML)"
         # Use the re.search() method to search for the pattern in the input string
         match = re.search(pattern, r_condition, re.IGNORECASE)
         # Check if a match was found
@@ -93,6 +104,7 @@ def get_rtype(rule_data, exist_rule_data: dict = {}):
             v_stp = 2.2
             v_msg = "No match found from '" + r_condition + "'"
             echo_msg(v_prg, v_stp, v_msg, 4)
+    # End of if r_std in ("SDTM_V2_0")
     return r_str 
 
 

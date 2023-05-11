@@ -5,11 +5,12 @@ RuleBuilder is a Python package for processing CDISC conformance rules. It
 provides a `RuleBuilder` class that can be used to read rule definitions from 
 an Excel file or a YAML file, and then process those rules by applying them to 
 datasets. Here is a list of steps that it performs:
+
 * Read rule definition. Here is a list of available rule definitions:
-    - FDA_VR1_6: FDA Validator Rules v1.6 December 2022_0
-    - SDTM_V2_0: SDTM and SDTMIG Conformance Rules_v2.0
-    - SEND_V4_0: SEND Conformance Rules v4.0
-    - ADAM_V4_0: ADaM Conformance Rules v4.0
+  * FDA_VR1_6: FDA Validator Rules v1.6 December 2022_0
+  * SDTM_V2_0: SDTM and SDTMIG Conformance Rules_v2.0
+  * SEND_V4_0: SEND Conformance Rules v4.0
+  * ADAM_V4_0: ADaM Conformance Rules v4.0
 * Get rule statistics if `get_db_rule` or `pub2db` is enabled.
 * Back up current rule(s) 
 * Get existing rule if the rule exists in the database or in local rule folder
@@ -21,8 +22,15 @@ datasets. Here is a list of steps that it performs:
 ## Installation
 
 To install `RuleBuilder` class, run the following command:
+
 ```python
 pip install crbuilder
+```
+
+or
+
+```python
+pip install git+https://github.com/cdisc-org/crbuilder.git
 ```
 
 ## Usage
@@ -35,10 +43,13 @@ It can perform the following tasks:
 * build a single rule, or process a list of rules or all rules.
 
 Here is the command line usage:
+
 ```python
 Usage: rulebuilder.py [OPTIONS] COMMAND [ARGS]...
 ```
+
 This produce a list of available commands:
+
 ```java
 Options:
   --help  Show this message and exit.
@@ -49,7 +60,6 @@ Commands:
   initialize
   process
 ```
-
 
 ### Initialize
 
@@ -110,7 +120,8 @@ python rulebuilder.py process --r_ids all  --pub2db 1
 ```
 
 You can specify any of the command-line options described above to customize the 
-processing of the rules. Here are a few examples: 
+processing of the rules. Here are a few examples:
+
 ``` java
 python rulebuilder.py process --r_ids "CG0001,    CG0002, cg0015" --pub2db 1
 python rulebuilder.py process --s_domain "AE,DM" --pub2db 1
@@ -124,36 +135,59 @@ This project is licensed under the MIT License - see the LICENSE.md file for det
 
 ## History
 
-### Version 0.4.0 (planned)
+### Version 0.4.4
 
-* Add capability of processing FDA conformance rules
-* Add log level for creating log details 
+* Add citation for multiple rules in a single doc 
+* Added component diff
+
+
+### Version 0.4.3
+
+* Fixed rule type overwritten issue
+* Enabled comment preserving process
+
+### Version 0.4.2
+
+* Added logic to update duplicated rule documents
+* Output all the files to the job folder
+* Fixed 4 issues related to Scope and Authorities
+
+### Version 0.4.1
+
+* Enhanced logging messages
+* Fixed additional issues related SDTM standards
+* Added standard switches and record filtering
+
+### Version 0.4.0
+
+* Added capability of processing FDA conformance rules
+* Added log level for creating log details
+* Fixed 3 issues related to SDTM rule processing
 
 ### Version 0.3.1
 
 * Moved from my personal repo [core-rule-builder](https://github.com/htu/core-rule-builder) to CDISC repo [crbuilder](https://github.com/cdisc-org/crbuilder)
 * Added command-line options
-* Added README 
+* Added README
 * Added backup as a default behavior while getting rule definition from database
 
 ### Version 0.3.0
 
-* Added logging capability to produce a log file per rule 
+* Added logging capability to produce a log file per rule
 * Added report capability for all the rules processed
-* Added reading from and publishing to the database 
+* Added reading from and publishing to the database
 * Added backup capability
-* Added de-duplication capability 
+* Added de-duplication capability
 
 ### Version 0.2.0
 
-* Added mutiple rule processing capability
-* Added error handling and message processing 
-* Added processing status report 
+* Added multiple rule processing capability
+* Added error handling and message processing
+* Added processing status report
 * Fixed some rule bugs  
 
 ### Version 0.1.0
+
 * Set up process framework
 * Read rules from a local rule folder
-* Produced single rule and pass rule validation 
-
-
+* Produced single rule and pass rule validation

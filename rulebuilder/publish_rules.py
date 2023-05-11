@@ -133,7 +133,7 @@ if __name__ == "__main__":
     echo_msg(v_prg, v_stp, "Test Case 01: Basic Parameter", 1)
     r_list = ["CG0006"]
  
-    # proc_sdtm_rules(rule_ids=["CG0006"], wrt2log=True)
+    # publish_rules(rule_ids=["CG0006"], wrt2log=True)
     publish_rules(rule_ids=r_list, write2log=1, db_cfg=cfg)
 
 

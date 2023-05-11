@@ -1,5 +1,10 @@
 # 04/06/2023: filter out data
-data/
+data/output/
+data/target/
+data/source/csvs/
+data/source/xmls/
+data/source/xlsx/
+data/source/yaml/
 baks/
 baks.bak/
 logs/
